@@ -17,6 +17,14 @@ module.COMMAND_PATTERN = /^[a-zA-Z]/
 
 
 //---------------------------------------------------------------------
+
+Object.defineProperty(String.prototype, 'raw', {
+	get: function(){
+		return this.replace(/\x1b\[..?m/g, '') }, })
+	
+
+
+//---------------------------------------------------------------------
 // basic argv parser...
 //
 // Format:
@@ -250,6 +258,229 @@ function(spec){
 			other.push(arg) }
 		return other } }
 
+
+
+// XXX Q's:
+// 		- can we differenciate commands from other methods/attrs??
+// 			'@cmd': function(){ ... },	
+// 			$cmd: function(){ ... },	
+// 		...otherwise we can't cleanly store anything without having to 
+// 		either wrap it in underscores, encapsulating or adding exceptions
+// 		on option/command names...
+var Parser =
+module.Parser =
+object.Constructor('Parser', {
+	// config...
+	optionPrefix: '-',
+	optionPattern: /^--?(.*)$/,
+	commandPrefix: '@',
+	commandPattern: /^([a-zA-Z].*)$/,
+
+	initCheck: true,
+
+
+	// instance stuff...
+	argv: null,
+	rest: null,
+	scriptNmae: null,
+	scriptPath: null,
+
+
+	// Handler API...
+	// XXX should these be .getOptions(..) / .getCommands(..) ???
+	options: function(...prefix){
+		var that = this
+		prefix = prefix.length == 0 ?
+			[this.optionPrefix]
+			: prefix
+		return prefix
+			.map(function(prefix){
+				var handlers = {}
+				object.deepKeys(that, Parser.prototype)
+					.forEach(function(opt){
+						// XXX
+						if(!opt.startsWith(prefix)){
+							return }
+						var [k, h] = that.getHandler(opt)
+						handlers[k] ?
+							handlers[k][0].push(opt)
+							: (handlers[k] = [[opt], h.arg, h.doc || k.slice(1), h]) })
+				return Object.values(handlers) })
+			.flat(1) },
+	commands: function(){
+		return this.options(this.commandPrefix) },
+
+	isCommand: function(str){
+		return this.commandPattern.test(str) 
+			&& (this.commandPrefix + str) in this },
+	getHandler: function(key){
+		key = this.optionPattern.test(key) ?
+			key.replace(this.optionPattern, '-$1')
+			: key.replace(this.commandPattern, '@$1')
+		var seen = new Set([key])
+		while(key in this 
+				&& typeof(this[key]) == typeof('str')){
+			key = this[key] 
+			// check for loops...
+			if(seen.has(key)){
+				throw new Error('Option loop detected: '+ ([...seen, key].join(' -> '))) }
+			seen.add(key) }
+		return [key, this[key]] },
+
+
+	// doc stuff...
+	// XXX revise naming...
+	helpColumnOffset: 3,
+	helpColumnPrefix: '- ',
+
+	// XXX these can be functions...
+	doc: undefined,
+	usage: '$SCRIPTNAME [OPTIONS]',
+	examples: undefined,
+	footer: undefined,
+
+	// XXX better name...
+	alignColumns: function(a, b, ...rest){
+		var opts_width = this.helpColumnOffset || 4
+		var prefix = this.helpColumnPrefix || ''
+		b = [b, ...rest].join('\n'+ ('\t'.repeat(opts_width+1) + ' '.repeat(prefix.length)))
+		return b ?
+			(a.raw.length < opts_width*8 ?
+				[a +'\t'.repeat(opts_width - Math.floor(a.raw.length/8))+ prefix + b]
+				: [a, '\t'.repeat(opts_width)+ prefix + b])
+			: [a] },
+
+	// Builtin options/commands...
+	// XXX do we need to encapsulate this???
+	// 		...on one hand encapsulation is cleaner but on the other it:
+	// 			1) splits the option spec and parser config
+	// 			2) forces the use of two mechanisms for option spec and 
+	// 				parser config...
+	// XXX need these to be sortable/groupable -- keep help at top...
+	'-h': '-help',
+	'-help': {
+		doc: 'print this message and exit.',
+		// XXX argv is first for uniformity with .__call__(..) -- need 
+		// 		the two to be interchangeable...
+		// 		...an alternative would keep it last, but this feels more fragile...
+		handler: function(argv, key, value){
+			var that = this
+			var x
+			console.log([
+				`Usage: ${ 
+					typeof(this.usage) == 'function' ? 
+						this.usage(this) 
+						: this.usage }`,
+				// doc...
+				...(this.doc ?
+					['', typeof(this.doc) == 'function' ?
+						this.__doc__()
+						: this.doc]
+					: []),
+				// options...
+				'',
+				'Options:',
+				...(this.options()
+					.map(function([opts, arg, doc]){
+						return [opts.join(' | -') +' '+ (arg || ''), doc] })),
+				// commands...
+				...(((x = this.commands()) && x.length > 0) ?
+					['', 'Commands:', 
+						...x.map(function([cmd, _, doc]){
+							return [
+								cmd
+									.map(function(cmd){
+										return cmd.slice(1)})
+									.join(' | '), 
+								doc] })]
+					: []),
+				// examples...
+				...(this.examples ?
+					['', 'Examples:', ...(
+						this.examples instanceof Array ?
+							this.examples
+								.map(function(e){ 
+									return e instanceof Array ? e : [e] })
+						: this.examples == 'function' ?
+							this.examples(this)
+						: this.examples	)]
+					: []),
+				// footer...
+				...(this.footer?
+					['', typeof(this.footer) == 'function' ? 
+						this.footer(this) 
+						: this.footer]
+					: []) ]
+			.map(function(e){
+				return e instanceof Array ?
+					that.alignColumns(...e
+							.map(function(s){ 
+								return s.replace(/\$SCRIPTNAME/g, that.scriptName) }))
+						// indent lists...
+						.map(function(s){
+							return '\t'+ s })
+					: e })
+			.flat()
+			.join('\n')
+			.replace(/\$SCRIPTNAME/g, this.scriptName)) 
+
+			// XXX should we explicitly exit here or in the runner???
+			process.exit() }},
+
+	unknownOption: function(key){
+		console.error('Unknown option:', key)
+		process.exit(1) }, 
+
+
+	__call__: function(_, argv){
+		var rest = this.rest = argv.slice()
+		this.argv = argv.slice()
+		this.script = rest[0]
+		this.scriptName = rest.shift().split(/[\\\/]/).pop()
+
+		var opt_pattern = this.optionPattern
+
+		var other = []
+		while(argv.length > 0){
+			var arg = argv.shift()
+			var type = opt_pattern.test(arg) ?
+					'opt'
+				: this.isCommand(arg) ?
+					'cmd'
+				: 'other'
+			// options / commands...
+			if(type != 'other'){
+				// get handler...
+				var handler = this.getHandler(arg).pop()
+						|| this.unknownOption
+				// get option value...
+				var value = (handler.arg && !opt_pattern.test(argv[0])) ?
+						argv.shift()
+					: undefined
+				// run handler...
+				;(typeof(handler) == 'function' ?
+						handler
+						: handler.handler)
+					.call(this, 
+						// pass value...
+						...(handler.arg ? [value] : []), 
+						arg, 
+						argv)
+				continue }
+			// other...
+			other.push(arg) }
+		return other },
+
+	__init__: function(spec){
+		Object.assign(this, spec)
+
+		// check for alias loops...
+		this.__pre_check__
+			&& this.__getoptions__(
+				this.__opt_pattern__ || module.OPTION_PATTERN,
+				this.__cmd_pattern__ || module.COMMAND_PATTERN)
+	},
+})
 
 
 
