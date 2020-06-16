@@ -288,6 +288,11 @@ object.Constructor('Parser', {
 
 	// Handler API...
 	// XXX should these be .getOptions(..) / .getCommands(..) ???
+	// Format:
+	// 	[
+	// 		[<keys>, <arg>, <doc>, <handler>],
+	// 		...
+	// 	]
 	options: function(...prefix){
 		var that = this
 		prefix = prefix.length == 0 ?
@@ -298,7 +303,6 @@ object.Constructor('Parser', {
 				var handlers = {}
 				object.deepKeys(that, Parser.prototype)
 					.forEach(function(opt){
-						// XXX
 						if(!opt.startsWith(prefix)){
 							return }
 						var [k, h] = that.getHandler(opt)
@@ -306,7 +310,20 @@ object.Constructor('Parser', {
 							handlers[k][0].push(opt)
 							: (handlers[k] = [[opt], h.arg, h.doc || k.slice(1), h]) })
 				return Object.values(handlers) })
-			.flat(1) },
+			.flat(1) 
+			.map(function(e, i){ return [e, i] })
+			.sort(function([a, ai], [b, bi]){
+				a = a[3].priority
+				b = b[3].priority
+				return a != null && b != null ?
+						b - a
+					// positive priority above order, negative below...
+					: (a > 0 || b < 0) ?
+						-1
+					: (b < 0 || a > 0) ?
+						1
+					: ai - bi })
+			.map(function([e, _]){ return e }) },
 	commands: function(){
 		return this.options(this.commandPrefix) },
 
@@ -360,6 +377,7 @@ object.Constructor('Parser', {
 	'-h': '-help',
 	'-help': {
 		doc: 'print this message and exit.',
+		priority: 99,
 		// XXX argv is first for uniformity with .__call__(..) -- need 
 		// 		the two to be interchangeable...
 		// 		...an alternative would keep it last, but this feels more fragile...
@@ -432,11 +450,34 @@ object.Constructor('Parser', {
 		process.exit(1) }, 
 
 
-	__call__: function(_, argv){
-		var rest = this.rest = argv.slice()
-		this.argv = argv.slice()
-		this.script = rest[0]
-		this.scriptName = rest.shift().split(/[\\\/]/).pop()
+	// XXX need to unify this with handler as much as possible to make
+	// 		parsers nestable....
+	// 		there are differences that can't be avoided:
+	// 			- argv/rest -- argv includes 2 extra args:
+	// 				- interpreter
+	// 				- script
+	// 		...these should be either avoided or "inherited"	
+	__call__: function(context, argv){
+		// nested command handler...
+		// XXX the condition is a bit too strong...
+		if(context instanceof Parser){
+			var rest = this.rest = argv.slice()
+			this.script = this.scriptName = 
+				context.scriptName +' '+ arguments[2]
+			this.argv = [context.scriptName, this.scriptName, ...argv]
+
+		// root parser...
+		} else {
+			var rest = this.rest = argv.slice()
+			this.argv = argv.slice()
+			// XXX revise this...
+			// 		- when run from node -- [<node>, <script>, ...]
+			// 		- when run from electron -- [<electron>, ...]
+			// 			require('electron').remove.process.argv
+			this.interpreter = rest.shift()
+			this.script = rest[0]
+			this.scriptName = rest.shift().split(/[\\\/]/).pop()
+		}
 
 		var opt_pattern = this.optionPattern
 
@@ -462,10 +503,9 @@ object.Constructor('Parser', {
 						handler
 						: handler.handler)
 					.call(this, 
-						// pass value...
-						...(handler.arg ? [value] : []), 
-						arg, 
-						argv)
+						argv,
+						arg,
+						...(handler.arg ? [value] : []))
 				continue }
 			// other...
 			other.push(arg) }
@@ -475,10 +515,8 @@ object.Constructor('Parser', {
 		Object.assign(this, spec)
 
 		// check for alias loops...
-		this.__pre_check__
-			&& this.__getoptions__(
-				this.__opt_pattern__ || module.OPTION_PATTERN,
-				this.__cmd_pattern__ || module.COMMAND_PATTERN)
+		this.initCheck
+			&& this.options(this.optionPrefix, this.commandPrefix)
 	},
 })
 

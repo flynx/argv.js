@@ -17,7 +17,9 @@ var argv = require('./argv')
 //---------------------------------------------------------------------
 
 
-var p = argv.Parser({
+var p = 
+module.p =
+argv.Parser({
 	'@help': '-help',
 
 	'-v': '-verbose',
@@ -28,13 +30,27 @@ var p = argv.Parser({
 
 	'-c': '@command',
 	'@cmd': '@command',
-	'@command': function(){
-		console.log('>>> COMMAND:', ...arguments)
-		return 'command'
+	'@command': {
+		priority: -50,
+		handler: function(){
+			console.log('>>> COMMAND:', ...arguments)
+			return 'command'
+		},
 	},
+
+	// XXX this for some reason breaks...
+	//'@test': argv.Parser({
+	//}),
+
+	'@nested': argv.Parser({
+		doc: 'nested parser.',
+
+	}),
 })
 
 
+
+/*
 console.log('  ->', p(['test', '--verbose', 'a', 'b', 'c']))
 
 console.log('  ->', p(['test', '-c', 'a', 'b', 'c']))
@@ -43,8 +59,18 @@ console.log('  ->', p(['test', 'command', 'a', 'b', 'c']))
 
 console.log('---')
 
-p(['test', '-h'])
 
+p(['test', 'nested', '-h'])
+
+
+p(['test', '-h'])
+//*/
+
+if(typeof(__filename) != 'undefined'
+		&& __filename == (require.main || {}).filename){
+
+	p(process.argv)
+}
 
 
 /**********************************************************************
