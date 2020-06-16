@@ -16,12 +16,33 @@ module.OPTION_PATTERN = /^--?/
 module.COMMAND_PATTERN = /^[a-zA-Z]/
 
 
+module.STOP = 
+	{doc: 'stop option processing'}
+
+module.ERROR = 
+	{doc: 'option processing error'}
+
+
+
 //---------------------------------------------------------------------
 
 Object.defineProperty(String.prototype, 'raw', {
 	get: function(){
 		return this.replace(/\x1b\[..?m/g, '') }, })
 	
+
+var afterCallback = function(name){
+	var attr = '__after_'+ name
+	return function(func){
+		(this[attr] = this[attr] || []).push(func)
+		return this } }
+
+
+var afterCallbackCall = function(name, context, ...args){
+	return (context['__after_'+ name] || [])
+		.forEach(function(func){
+			func.call(context, ...args) }) }
+
 
 
 //---------------------------------------------------------------------
@@ -227,16 +248,16 @@ function(spec){
 
 			rest: argv,
 		}
-		var other = []
+		var unhandled = []
 		while(argv.length > 0){
 			var arg = argv.shift()
 			var type = opt_pattern.test(arg) ?
 					'opt'
 				: spec.__iscommand__(arg) ?
 					'cmd'
-				: 'other'
+				: 'unhandled'
 			// options / commands...
-			if(type != 'other'){
+			if(type != 'unhandled'){
 				// get handler...
 				var handler = spec.__gethandler__(arg).pop()
 						|| spec.__unknown__
@@ -254,9 +275,9 @@ function(spec){
 						arg, 
 						argv)
 				continue }
-			// other...
-			other.push(arg) }
-		return other } }
+			// unhandled...
+			unhandled.push(arg) }
+		return unhandled } }
 
 
 
@@ -287,12 +308,14 @@ object.Constructor('Parser', {
 
 
 	// Handler API...
-	// XXX should these be .getOptions(..) / .getCommands(..) ???
+	//
 	// Format:
 	// 	[
 	// 		[<keys>, <arg>, <doc>, <handler>],
 	// 		...
 	// 	]
+	//
+	// XXX should these be .getOptions(..) / .getCommands(..) ???
 	options: function(...prefix){
 		var that = this
 		prefix = prefix.length == 0 ?
@@ -306,9 +329,10 @@ object.Constructor('Parser', {
 						if(!opt.startsWith(prefix)){
 							return }
 						var [k, h] = that.getHandler(opt)
-						handlers[k] ?
-							handlers[k][0].push(opt)
-							: (handlers[k] = [[opt], h.arg, h.doc || k.slice(1), h]) })
+						h !== undefined
+							&& (handlers[k] ?
+								handlers[k][0].push(opt)
+								: (handlers[k] = [ [opt], h.arg, h.doc || k.slice(1), h ])) })
 				return Object.values(handlers) })
 			.flat(1) 
 			.map(function(e, i){ return [e, i] })
@@ -346,17 +370,14 @@ object.Constructor('Parser', {
 
 
 	// doc stuff...
-	// XXX revise naming...
 	helpColumnOffset: 3,
 	helpColumnPrefix: '- ',
 
-	// XXX these can be functions...
-	doc: undefined,
 	usage: '$SCRIPTNAME [OPTIONS]',
+	doc: undefined,
 	examples: undefined,
 	footer: undefined,
 
-	// XXX better name...
 	alignColumns: function(a, b, ...rest){
 		var opts_width = this.helpColumnOffset || 4
 		var prefix = this.helpColumnPrefix || ''
@@ -368,86 +389,80 @@ object.Constructor('Parser', {
 			: [a] },
 
 	// Builtin options/commands...
-	// XXX do we need to encapsulate this???
-	// 		...on one hand encapsulation is cleaner but on the other it:
-	// 			1) splits the option spec and parser config
-	// 			2) forces the use of two mechanisms for option spec and 
-	// 				parser config...
-	// XXX need these to be sortable/groupable -- keep help at top...
 	'-h': '-help',
 	'-help': {
 		doc: 'print this message and exit.',
 		priority: 99,
-		// XXX argv is first for uniformity with .__call__(..) -- need 
-		// 		the two to be interchangeable...
-		// 		...an alternative would keep it last, but this feels more fragile...
 		handler: function(argv, key, value){
 			var that = this
-			var x
-			console.log([
-				`Usage: ${ 
-					typeof(this.usage) == 'function' ? 
-						this.usage(this) 
-						: this.usage }`,
-				// doc...
-				...(this.doc ?
-					['', typeof(this.doc) == 'function' ?
-						this.__doc__()
-						: this.doc]
-					: []),
-				// options...
-				'',
-				'Options:',
-				...(this.options()
-					.map(function([opts, arg, doc]){
-						return [opts.join(' | -') +' '+ (arg || ''), doc] })),
-				// commands...
-				...(((x = this.commands()) && x.length > 0) ?
-					['', 'Commands:', 
-						...x.map(function([cmd, _, doc]){
-							return [
-								cmd
-									.map(function(cmd){
-										return cmd.slice(1)})
-									.join(' | '), 
-								doc] })]
-					: []),
-				// examples...
-				...(this.examples ?
-					['', 'Examples:', ...(
+
+			var expandVars = function(str){
+				return str
+					.replace(/\$SCRIPTNAME/g, that.scriptName) }
+			var getValue = function(name){
+				return that[name] ?
+					['', typeof(that[name]) == 'function' ?
+						that[name]()
+						: that[name]]
+		   			: [] }
+			var section = function(title, items){
+				items = items instanceof Array ? items : [items]
+				return items.length > 0 ?
+					['', title +':', ...items]
+					: [] }
+
+			console.log(
+				expandVars([
+					`Usage: ${ getValue('usage').join('') }`,
+					// doc (optional)...
+					...getValue('doc'),
+					// options...
+					...section('Options',
+						this.options()
+							.map(function([opts, arg, doc]){
+								return [ opts.join(' | -') +' '+ (arg || ''), doc] })),
+					// commands (optional)...
+					...section('Commands',
+						this.commands()
+							.map(function([cmd, _, doc]){
+								return [
+									cmd
+										.map(function(cmd){ return cmd.slice(1)})
+										.join(' | '), 
+									doc] })),
+					// examples (optional)...
+					...section('Examples',
 						this.examples instanceof Array ?
 							this.examples
 								.map(function(e){ 
 									return e instanceof Array ? e : [e] })
-						: this.examples == 'function' ?
-							this.examples(this)
-						: this.examples	)]
-					: []),
-				// footer...
-				...(this.footer?
-					['', typeof(this.footer) == 'function' ? 
-						this.footer(this) 
-						: this.footer]
-					: []) ]
-			.map(function(e){
-				return e instanceof Array ?
-					that.alignColumns(...e
-							.map(function(s){ 
-								return s.replace(/\$SCRIPTNAME/g, that.scriptName) }))
-						// indent lists...
-						.map(function(s){
-							return '\t'+ s })
-					: e })
-			.flat()
-			.join('\n')
-			.replace(/\$SCRIPTNAME/g, this.scriptName)) 
+						: getValue('examples') ),
+					// footer (optional)...
+					...getValue('footer') ]
+				// expand/align columns...
+				.map(function(e){
+					return e instanceof Array ?
+						// NOTE: we need to expandVars(..) here so as to 
+						// 		be able to calculate actual widths...
+						that.alignColumns(...e.map(expandVars))
+							.map(function(s){ return '\t'+ s })
+						: e })
+				.flat()
+				.join('\n')))
 
 			// XXX should we explicitly exit here or in the runner???
-			process.exit() }},
+			return module.STOP }},
 
-	unknownOption: function(key){
+
+	unknownOption: function(_, key){
 		console.error('Unknown option:', key)
-		process.exit(1) }, 
+		return module.ERROR }, 
+
+
+	// post parsing callbacks...
+	then: afterCallback('parsing'),
+	stop: afterCallback('stop'),
+	error: afterCallback('error'),
 
 
 	// XXX need to unify this with handler as much as possible to make
@@ -458,6 +473,9 @@ object.Constructor('Parser', {
 	// 				- script
 	// 		...these should be either avoided or "inherited"	
 	__call__: function(context, argv){
+		var that = this
+		var nested = false
+
 		// nested command handler...
 		// XXX the condition is a bit too strong...
 		if(context instanceof Parser){
@@ -465,6 +483,7 @@ object.Constructor('Parser', {
 			this.script = this.scriptName = 
 				context.scriptName +' '+ arguments[2]
 			this.argv = [context.scriptName, this.scriptName, ...argv]
+			nested = true
 
 		// root parser...
 		} else {
@@ -481,16 +500,16 @@ object.Constructor('Parser', {
 
 		var opt_pattern = this.optionPattern
 
-		var other = []
+		var unhandled = []
 		while(argv.length > 0){
 			var arg = argv.shift()
 			var type = opt_pattern.test(arg) ?
 					'opt'
 				: this.isCommand(arg) ?
 					'cmd'
-				: 'other'
+				: 'unhandled'
 			// options / commands...
-			if(type != 'other'){
+			if(type != 'unhandled'){
 				// get handler...
 				var handler = this.getHandler(arg).pop()
 						|| this.unknownOption
@@ -499,17 +518,28 @@ object.Constructor('Parser', {
 						argv.shift()
 					: undefined
 				// run handler...
-				;(typeof(handler) == 'function' ?
+				var res = (typeof(handler) == 'function' ?
 						handler
 						: handler.handler)
 					.call(this, 
 						argv,
 						arg,
 						...(handler.arg ? [value] : []))
+				// handle .STOP / .ERROR
+				if(res === module.STOP || res === module.ERROR){
+					afterCallbackCall(
+						res === module.STOP ? 'stop' : 'error', 
+						this, arg)
+					return nested ? 
+						res
+			   			: this }
 				continue }
-			// other...
-			other.push(arg) }
-		return other },
+			// unhandled...
+			unhandled.push(arg) }
+
+		// post handlers...
+		afterCallbackCall('parsing', this, unhandled)
+		return this },
 
 	__init__: function(spec){
 		Object.assign(this, spec)

@@ -20,33 +20,44 @@ var argv = require('./argv')
 var p = 
 module.p =
 argv.Parser({
-	'@help': '-help',
+		'@help': '-help',
 
-	'-v': '-verbose',
-	'-verbose': function(){
-		console.log('>>> VERBOSE:', ...arguments)
-		return 'verbose'
-	},
-
-	'-c': '@command',
-	'@cmd': '@command',
-	'@command': {
-		priority: -50,
-		handler: function(){
-			console.log('>>> COMMAND:', ...arguments)
-			return 'command'
+		'-v': '-verbose',
+		'-verbose': function(){
+			console.log('>>> VERBOSE:', ...arguments)
+			return 'verbose'
 		},
-	},
 
-	// XXX this for some reason breaks...
-	//'@test': argv.Parser({
-	//}),
+		'-c': '@command',
+		'@cmd': '@command',
+		'@command': {
+			priority: -50,
+			handler: function(){
+				console.log('>>> COMMAND:', ...arguments)
+				return 'command'
+			},
+		},
 
-	'@nested': argv.Parser({
-		doc: 'nested parser.',
+		// XXX dead-end alias...
+		'-d': '-dead-end',
 
-	}),
-})
+		'@test': argv.Parser({
+		}),
+
+		'@nested': argv.Parser({
+			doc: 'nested parser.',
+
+			'@nested': argv.Parser({
+				doc: 'nested nested parser.',
+			}),
+		}),
+	})
+	.then(function(){
+		console.log('DONE') })
+	.stop(function(){
+		console.log('STOP') })
+	.error(function(){
+		console.log('ERROR') })
 
 
 
