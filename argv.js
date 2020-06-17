@@ -31,6 +31,8 @@ Object.defineProperty(String.prototype, 'raw', {
 		return this.replace(/\x1b\[..?m/g, '') }, })
 	
 
+// XXX add default...
+// XXX add ability to clear defaults...
 var afterCallback = function(name){
 	var attr = '__after_'+ name
 	return function(func){
