@@ -295,8 +295,12 @@ module.Parser =
 object.Constructor('Parser', {
 	// config...
 	optionPrefix: '-',
-	optionPattern: /^--?(.*)$/,
 	commandPrefix: '@',
+	
+	// NOTE: this and .commandPattern are "input" patterns, i.e. both
+	// 		are used to test strings the user provided and not how the
+	// 		commands/potions are named internally...
+	optionPattern: /^--?(.*)$/,
 	commandPattern: /^([a-zA-Z].*)$/,
 
 	initCheck: true,
@@ -358,8 +362,8 @@ object.Constructor('Parser', {
 			&& (this.commandPrefix + str) in this },
 	getHandler: function(key){
 		key = this.optionPattern.test(key) ?
-			key.replace(this.optionPattern, '-$1')
-			: key.replace(this.commandPattern, '@$1')
+			key.replace(this.optionPattern, this.optionPrefix+'$1')
+			: key.replace(this.commandPattern, this.commandPrefix+'$1')
 		var seen = new Set([key])
 		while(key in this 
 				&& typeof(this[key]) == typeof('str')){
@@ -454,6 +458,8 @@ object.Constructor('Parser', {
 
 			// XXX should we explicitly exit here or in the runner???
 			return module.STOP }},
+	// common shorthands...
+	'-v': '-verbose',
 
 
 	unknownOption: function(_, key){
@@ -479,6 +485,13 @@ object.Constructor('Parser', {
 	__call__: function(context, argv){
 		var that = this
 		var nested = false
+
+		// default argv...
+		argv = argv == null ?
+			process.argv.slice()
+			: argv
+		// XXX need to normalize argv...
+		// XXX ...strip out the interpreter if it is given...
 
 		// nested command handler...
 		// XXX the condition is a bit too strong...
