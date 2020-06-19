@@ -462,8 +462,8 @@ object.Constructor('Parser', {
 	'-v': '-verbose',
 
 
-	unknownOption: function(_, key){
-		console.error('Unknown option:', key)
+	unknownArgument: function(_, key){
+		console.error('Unknown '+ (key.startsWith('-') ? 'option:' : 'command:'), key)
 		return module.ERROR }, 
 
 
@@ -529,7 +529,7 @@ object.Constructor('Parser', {
 			if(type != 'unhandled'){
 				// get handler...
 				var handler = this.getHandler(arg).pop()
-						|| this.unknownOption
+						|| this.unknownArgument
 				// get option value...
 				var value = (handler.arg && !opt_pattern.test(argv[0])) ?
 						argv.shift()
