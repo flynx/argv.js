@@ -283,13 +283,6 @@ function(spec){
 
 
 
-// XXX Q's:
-// 		- can we differenciate commands from other methods/attrs??
-// 			'@cmd': function(){ ... },	
-// 			$cmd: function(){ ... },	
-// 		...otherwise we can't cleanly store anything without having to 
-// 		either wrap it in underscores, encapsulating or adding exceptions
-// 		on option/command names...
 var Parser =
 module.Parser =
 object.Constructor('Parser', {
@@ -563,8 +556,7 @@ object.Constructor('Parser', {
 
 		// check for alias loops...
 		this.initCheck
-			&& this.options(this.optionPrefix, this.commandPrefix)
-	},
+			&& this.options(this.optionPrefix, this.commandPrefix) },
 })
 
 
