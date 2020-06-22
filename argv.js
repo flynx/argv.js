@@ -560,6 +560,22 @@ object.Constructor('Parser', {
 })
 
 
+// defaults...
+// XXX do we do execution order???
+// 		...if these will do process.exit(..) then they need to be last...
+Parser.prototype
+	.then(function(){
+		// XXX
+	})
+	.stop(function(){
+		// XXX
+	})
+	.error(function(){
+		// XXX
+	})
+
+
+
 
 /**********************************************************************
 * vim:set ts=4 sw=4 :                               */ return module })
