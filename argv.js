@@ -314,6 +314,7 @@ object.Constructor('Parser', {
 	// 		...
 	// 	]
 	//
+	// XXX add option groups...
 	// XXX should these be .getOptions(..) / .getCommands(..) ???
 	options: function(...prefix){
 		var that = this
@@ -416,10 +417,16 @@ object.Constructor('Parser', {
 					// doc (optional)...
 					...getValue('doc'),
 					// options...
+					// XXX add option groups...
 					...section('Options',
 						this.options()
 							.map(function([opts, arg, doc]){
 								return [ opts.join(' | -') +' '+ (arg || ''), doc] })),
+					// dynamic options...
+					...section('Dynamic options',
+						this.handleArgument ? 
+							this.handleArgument('doc') || [] 
+							: []),
 					// commands (optional)...
 					...section('Commands',
 						this.commands()
@@ -455,26 +462,44 @@ object.Constructor('Parser', {
 	'-v': '-verbose',
 
 
-	unknownArgument: function(_, key){
+	//
+	// 	Handle dynamic/unknown argument...
+	// 	.handleArgument(args, arg)
+	// 		-> module.ERROR
+	// 		-> module.STOP
+	// 		-> result
+	//
+	// 	Get dynamic argument doc...
+	// 	.handleArgument('doc')
+	// 		-> undefined
+	// 		-> doc
+	//
+	//
+	// doc format:
+	// 	[
+	// 		[<option-spec>, <doc>],
+	// 		...
+	// 	]
+	//
+	//
+	// NOTE: this is mainly needed to handle dynamic arguments...
+	handleArgument: function(_, key){
+		if(arguments.length == 1 && arguments[0] == 'doc'){
+			return undefined }
 		console.error('Unknown '+ (key.startsWith('-') ? 'option:' : 'command:'), key)
 		return module.ERROR }, 
 
+	// NOTE: if this is set to false Parser will not call process.exit(..)
+	handleErrorExit: function(arg){
+		process.exit(1) },
 
 	// post parsing callbacks...
-	// XXX add defaults...
-	// XXX add ability to clear defaults...
 	then: afterCallback('parsing'),
 	stop: afterCallback('stop'),
 	error: afterCallback('error'),
 
-
-	// XXX need to unify this with handler as much as possible to make
-	// 		parsers nestable....
-	// 		there are differences that can't be avoided:
-	// 			- argv/rest -- argv includes 2 extra args:
-	// 				- interpreter
-	// 				- script
-	// 		...these should be either avoided or "inherited"	
+	// NOTE: this (i.e. parser) can be used as a nested command/option 
+	// 		handler...
 	__call__: function(context, argv){
 		var that = this
 		var nested = false
@@ -522,7 +547,7 @@ object.Constructor('Parser', {
 			if(type != 'unhandled'){
 				// get handler...
 				var handler = this.getHandler(arg).pop()
-						|| this.unknownArgument
+						|| this.handleArgument
 				// get option value...
 				var value = (handler.arg && !opt_pattern.test(argv[0])) ?
 						argv.shift()
@@ -540,6 +565,9 @@ object.Constructor('Parser', {
 					afterCallbackCall(
 						res === module.STOP ? 'stop' : 'error', 
 						this, arg)
+					res === module.ERROR
+						&& this.handleErrorExit
+						&& this.handleErrorExit(arg)
 					return nested ? 
 						res
 			   			: this }
@@ -558,21 +586,6 @@ object.Constructor('Parser', {
 		this.initCheck
 			&& this.options(this.optionPrefix, this.commandPrefix) },
 })
-
-
-// defaults...
-// XXX do we do execution order???
-// 		...if these will do process.exit(..) then they need to be last...
-Parser.prototype
-	.then(function(){
-		// XXX
-	})
-	.stop(function(){
-		// XXX
-	})
-	.error(function(){
-		// XXX
-	})
 
 
 

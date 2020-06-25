@@ -20,6 +20,9 @@ var argv = require('./argv')
 var p = 
 module.p =
 argv.Parser({
+		// disable exit on error...
+		handleErrorExit: false,
+
 		'@help': '-help',
 
 		'-v': '-verbose',
