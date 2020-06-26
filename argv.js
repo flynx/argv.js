@@ -78,6 +78,7 @@ var afterCallbackCall = function(name, context, ...args){
 // 		- arg value type conversion???
 // 		- make this a constructor???
 // 		- extend this to support command calling...
+// XXX should we handle <scriptName>-<command> script calls???
 // XXX do we handle = for options with values???
 // XXX move this to it's own lib...
 // 		argv-handler
@@ -283,6 +284,62 @@ function(spec){
 
 
 
+//
+//	Parser(spec)
+//		-> parser
+//
+// spec format:
+// 	{
+// 		// option alias...
+// 		'-v': '-verbose',
+// 		// options handler (basic)...
+// 		'-verbose': function(opts, key, value){
+// 			...
+// 		},
+//
+//	    // option handler (full)...
+//	    // NOTE: the same attributes (except for .handler) can be set on 
+//	    //		the function handler above to same effect...
+//	    '-t': '-test',
+//		'-test': {
+//			doc: 'test option.',
+//			arg: 'VALUE',
+//			handler: function(opts, key, value){ 
+//				...
+//			}},
+//
+//		// command...
+//		//
+//		// NOTE: commands are the same as options in every way other than
+//		//		call syntax.
+//		// NOTE: it is possible to alias options to commands and vice-versa...
+//		'@command': ... ,
+//
+//
+//		// nested parsers...
+//		//
+//		// NOTE: the nested parser behaves the same as if it was root and 
+//		//		can consume as many argv elements as it needs, effectively 
+//		//		rendering the relevant options as context sensitive, e.g.:
+//		//			cmd -h				# get root help...
+//		//			cmd nest -h			# get help for @nest command...
+//		// NOTE: a nested parser can be either an option or a command...
+//		@nest: new Parser({
+//				doc: 'nested parser',
+//
+//				'-nested-option': {
+//					...
+//				},
+//			})
+//			.then(function(){
+//				...
+//			}),
+//
+//		...
+// 	}
+//
+//
+// XXX should we handle <scriptName>-<command> script calls???
 var Parser =
 module.Parser =
 object.Constructor('Parser', {
@@ -498,6 +555,10 @@ object.Constructor('Parser', {
 	stop: afterCallback('stop'),
 	error: afterCallback('error'),
 
+	//
+	//	parser(argv)
+	//		-> unprocessed
+	//
 	// NOTE: this (i.e. parser) can be used as a nested command/option 
 	// 		handler...
 	__call__: function(context, argv){
@@ -579,6 +640,7 @@ object.Constructor('Parser', {
 		afterCallbackCall('parsing', this, unhandled)
 		return this },
 
+	// NOTE: see general doc...
 	__init__: function(spec){
 		Object.assign(this, spec)
 
