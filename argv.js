@@ -347,11 +347,8 @@ object.Constructor('Parser', {
 	optionPrefix: '-',
 	commandPrefix: '@',
 	
-	// NOTE: this and .commandPattern are "input" patterns, i.e. both
-	// 		are used to test strings the user provided and not how the
-	// 		commands/potions are named internally...
-	optionPattern: /^--?(.*)$/,
-	commandPattern: /^([a-zA-Z].*)$/,
+	optionInputPattern: /^--?(.*)$/,
+	commandInputPattern: /^([a-zA-Z].*)$/,
 
 
 	// instance stuff...
@@ -407,15 +404,15 @@ object.Constructor('Parser', {
 		return this.options(this.commandPrefix) },
 
 	isCommand: function(str){
-		return this.commandPattern.test(str) 
+		return this.commandInputPattern.test(str) 
 			&& (this.commandPrefix + str) in this },
 
 	// NOTE: this ignores options forming alias loops and dead-end 
 	// 		options...
 	getHandler: function(key){
-		key = this.optionPattern.test(key) ?
-			key.replace(this.optionPattern, this.optionPrefix+'$1')
-			: key.replace(this.commandPattern, this.commandPrefix+'$1')
+		key = this.optionInputPattern.test(key) ?
+			key.replace(this.optionInputPattern, this.optionPrefix+'$1')
+			: key.replace(this.commandInputPattern, this.commandPrefix+'$1')
 		var seen = new Set([key])
 		while(key in this 
 				&& typeof(this[key]) == typeof('str')){
@@ -617,7 +614,7 @@ object.Constructor('Parser', {
 			this.scriptName = rest.shift().split(/[\\\/]/).pop()
 		}
 
-		var opt_pattern = this.optionPattern
+		var opt_pattern = this.optionInputPattern
 
 		var unhandled = []
 		while(argv.length > 0){
