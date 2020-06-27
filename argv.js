@@ -353,8 +353,6 @@ object.Constructor('Parser', {
 	optionPattern: /^--?(.*)$/,
 	commandPattern: /^([a-zA-Z].*)$/,
 
-	initCheck: true,
-
 
 	// instance stuff...
 	argv: null,
@@ -411,6 +409,9 @@ object.Constructor('Parser', {
 	isCommand: function(str){
 		return this.commandPattern.test(str) 
 			&& (this.commandPrefix + str) in this },
+
+	// NOTE: this ignores options forming alias loops and dead-end 
+	// 		options...
 	getHandler: function(key){
 		key = this.optionPattern.test(key) ?
 			key.replace(this.optionPattern, this.optionPrefix+'$1')
@@ -421,9 +422,20 @@ object.Constructor('Parser', {
 			key = this[key] 
 			// check for loops...
 			if(seen.has(key)){
-				throw new Error('Option loop detected: '+ ([...seen, key].join(' -> '))) }
+				return [key, undefined, 
+					// report loop...
+					'loop', [...seen, key]] }
+				//throw new Error('Option loop detected: '+ ([...seen, key].join(' -> '))) }
 			seen.add(key) }
-		return [key, this[key]] },
+		return [key, this[key], 
+			// report dead-end if this[key] is undefined...
+			...(this[key] ? 
+				[]
+				: ['dead-end'])] },
+
+
+	// XXX need to test option definitions... (???)
+	// 		i.e. report loops and dead ends...
 
 
 	// doc stuff...
@@ -478,7 +490,13 @@ object.Constructor('Parser', {
 					...section('Options',
 						this.options()
 							.map(function([opts, arg, doc]){
-								return [ opts.join(' | -') +' '+ (arg || ''), doc] })),
+								return [ 
+									opts
+										.sort(function(a, b){ 
+											return a.length - b.length})
+										.join(' | -') 
+											+' '+ (arg || ''), 
+									doc] })),
 					// dynamic options...
 					...section('Dynamic options',
 						this.handleArgument ? 
@@ -515,8 +533,13 @@ object.Constructor('Parser', {
 
 			// XXX should we explicitly exit here or in the runner???
 			return module.STOP }},
-	// common shorthands...
+
+	// common short-hands...
+	// NOTE: defining this as a loop will enable the user to define any 
+	// 		of the aliases as the handler and thus breaking the loop...
+	// NOTE: unless the loop is broken this set of options is not usable.
 	'-v': '-verbose',
+	'-verbose': '-v',
 
 
 	//
@@ -607,7 +630,7 @@ object.Constructor('Parser', {
 			// options / commands...
 			if(type != 'unhandled'){
 				// get handler...
-				var handler = this.getHandler(arg).pop()
+				var handler = this.getHandler(arg)[1]
 						|| this.handleArgument
 				// get option value...
 				var value = (handler.arg && !opt_pattern.test(argv[0])) ?
@@ -642,11 +665,7 @@ object.Constructor('Parser', {
 
 	// NOTE: see general doc...
 	__init__: function(spec){
-		Object.assign(this, spec)
-
-		// check for alias loops...
-		this.initCheck
-			&& this.options(this.optionPrefix, this.commandPrefix) },
+		Object.assign(this, spec) },
 })
 
 

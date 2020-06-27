@@ -25,7 +25,7 @@ argv.Parser({
 
 		'@help': '-help',
 
-		'-v': '-verbose',
+		//'-v': '-verbose',
 		'-verbose': function(){
 			console.log('>>> VERBOSE:', ...arguments)
 			return 'verbose'
