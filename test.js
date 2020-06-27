@@ -25,7 +25,6 @@ argv.Parser({
 
 		'@help': '-help',
 
-		//'-v': '-verbose',
 		'-verbose': function(){
 			console.log('>>> VERBOSE:', ...arguments)
 			return 'verbose'
@@ -41,9 +40,6 @@ argv.Parser({
 			},
 		},
 
-		// XXX dead-end alias...
-		'-d': '-dead-end',
-
 		'@test': argv.Parser({
 		}),
 
@@ -54,6 +50,21 @@ argv.Parser({
 				doc: 'nested nested parser.',
 			}),
 		}),
+
+		// these aliases will not get shown...
+
+		// dead-end alias...
+		'-d': '-dead-end',
+
+		// alias loops...
+		'-z': '-z',
+
+		'-x': '-y',
+		'-y': '-x',
+
+		'-a': '-b',
+		'-b': '-c',
+		'-c': '-a',
 	})
 	.then(function(){
 		console.log('DONE') })
