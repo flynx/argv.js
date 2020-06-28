@@ -67,7 +67,7 @@ argv.Parser({
 		'-c': '-a',
 	})
 	.then(function(){
-		console.log('DONE') })
+		console.log('DONE', ...arguments) })
 	.stop(function(){
 		console.log('STOP') })
 	.error(function(){

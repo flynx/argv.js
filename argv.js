@@ -349,6 +349,16 @@ object.Constructor('Parser', {
 
 	// post parsing callbacks...
 	//
+	// 	.then(callback(unhandleed))
+	//
+	// 	.stop(callback(arg))
+	//
+	// 	.error(callback(arg))
+	//
+	//
+	// XXX need to document the arguments to each handler/callback...
+	// XXX .then(..) passes the full list of unhandleed args including 
+	// 		argv[0] and argv[1]...
 	then: afterCallback('parsing'),
 	stop: afterCallback('stop'),
 	error: afterCallback('error'),
@@ -366,15 +376,17 @@ object.Constructor('Parser', {
 		var nested = false
 
 		// default argv...
-		argv = argv == null ?
-			process.argv.slice()
-			: argv
-		// XXX ARGV: strip out the interpreter if it is given...
+		argv = (argv == null ?
+				process.argv
+				: argv)
+			.slice()
+		var rest = this.rest = argv.slice()
+
+		// XXX ARGV: strip out the interpreter if it is given... (???)
 
 		// nested command handler...
 		// XXX the condition is a bit too strong...
 		if(context instanceof Parser){
-			var rest = this.rest = argv.slice()
 			this.script = this.scriptName = 
 				context.scriptName +' '+ arguments[2]
 			this.argv = [context.scriptName, this.scriptName, ...argv]
@@ -382,7 +394,6 @@ object.Constructor('Parser', {
 
 		// root parser...
 		} else {
-			var rest = this.rest = argv.slice()
 			this.argv = argv.slice()
 			// XXX ARGV: revise this...
 			// 		- when run from node -- [<node>, <script>, ...]
@@ -396,8 +407,8 @@ object.Constructor('Parser', {
 		var opt_pattern = this.optionInputPattern
 
 		var unhandled = []
-		while(argv.length > 0){
-			var [arg, value] = argv.shift().split(/=/)
+		while(rest.length > 0){
+			var [arg, value] = rest.shift().split(/=/)
 			var type = opt_pattern.test(arg) ?
 					'opt'
 				: this.isCommand(arg) ?
@@ -410,8 +421,8 @@ object.Constructor('Parser', {
 						|| this.handleArgument
 				// get option value...
 				value = value 
-					|| ((handler.arg && !opt_pattern.test(argv[0])) ?
-							argv.shift()
+					|| ((handler.arg && !opt_pattern.test(rest[0])) ?
+							rest.shift()
 						: undefined)
 				// value conversion...
 				value = value && this.handleArgumentValue ?
@@ -422,7 +433,7 @@ object.Constructor('Parser', {
 						handler
 						: handler.handler)
 					.call(this, 
-						argv,
+						rest,
 						arg,
 						...(value ? [value] : []))
 				// handle .STOP / .ERROR
