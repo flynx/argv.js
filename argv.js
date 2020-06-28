@@ -10,11 +10,8 @@
 var object = require('ig-object')
 
 
+
 //---------------------------------------------------------------------
-
-module.OPTION_PATTERN = /^--?/
-module.COMMAND_PATTERN = /^[a-zA-Z]/
-
 
 module.STOP = 
 	{doc: 'stop option processing'}
@@ -25,14 +22,8 @@ module.ERROR =
 
 
 //---------------------------------------------------------------------
+// helpers...
 
-Object.defineProperty(String.prototype, 'raw', {
-	get: function(){
-		return this.replace(/\x1b\[..?m/g, '') }, })
-	
-
-// XXX add default...
-// XXX add ability to clear defaults...
 var afterCallback = function(name){
 	var attr = '__after_'+ name
 	return function(func){
@@ -48,245 +39,12 @@ var afterCallbackCall = function(name, context, ...args){
 
 
 //---------------------------------------------------------------------
-// basic argv parser...
+// Basic argv parser...
 //
-// Format:
-// 	{
-// 		// alias...
-// 		'-v': '-verbose',
-// 		// handler...
-// 		'-verbose': function(opt, rest){
-// 			...
-// 		},
-//
-//	    '-t': '-test',
-//		'-test': {
-//			doc: 'test option.',
-//			arg: 'VALUE',
-//			handler: function(value, opt, rest){ 
-//				...
-//			}},
-//
-//		command: function(){
-//			...
-//		},
-// 		...
-// 	}
-//
-// XXX add features:
-// 		- option groups -- nested specs...
-// 		- arg value type conversion???
-// 		- make this a constructor???
-// 		- extend this to support command calling...
-// XXX should we handle <scriptName>-<command> script calls???
-// XXX do we handle = for options with values???
-// XXX move this to it's own lib...
-// 		argv-handler
-// 		ig-argv
-// 		...
-// XXX need better test processing:
-// 		- line breaks
-// 		- ...
-var ArgvParser = 
-module.ArgvParser =
-function(spec){
-	// spec defaults...
-	// NOTE: this is intentionally not dynamic...
-	spec = Object.assign({
-		// builtin options...
-		'-h': '-help',
-		// XXX revise...
-		'-help': {
-			doc: 'print this message and exit.',
-			handler: function(){
-				var spec = this.spec
-				var that = this
-				var x
-				console.log([
-					`Usage: ${ 
-						typeof(spec.__usage__) == 'function' ? 
-							spec.__usage__.call(this) 
-							: spec.__usage__ }`,
-					// doc...
-					...(spec.__doc__ ?
-						['', typeof(spec.__doc__) == 'function' ?
-							spec.__doc__()
-							: spec.__doc__]
-						: []),
-					// options...
-					'',
-					'Options:',
-					...(spec.__getoptions__()
-						.map(function([opts, arg, doc]){
-							return [opts.join(' | -') +' '+ (arg || ''), doc] })),
-					// commands...
-					...(((x = spec.__getcommands__()) && x.length > 0) ?
-						['', 'Commands:', 
-							...x.map(function([cmd, _, doc]){
-								return [cmd.join(' | '), doc] })]
-						: []),
-					// examples...
-					...(this.spec.__examples__ ?
-						['', 'Examples:', ...(
-							this.spec.__examples__ instanceof Array ?
-								spec.__examples__
-									.map(function(e){ 
-										return e instanceof Array ? e : [e] })
-								: spec.__examples__(this) )]
-						: []),
-					// footer...
-					...(this.spec.__footer__?
-						['', typeof(this.spec.__footer__) == 'function' ? 
-							spec.__footer__(this) 
-							: spec.__footer__]
-						: []) ]
-				.map(function(e){
-					return e instanceof Array ?
-						spec.__align__(...e
-								.map(function(s){ 
-									return s.replace(/\$scriptname/g, that.scriptname) }))
-							// indent lists...
-							.map(function(s){
-								return '\t'+ s })
-						: e })
-				.flat()
-				.join('\n')
-				.replace(/\$scriptname/g, this.scriptname)) 
-
-				process.exit() }},
-
-		// special values and methods...
-		__pre_check__: true,
-		__opt_pattern__: module.OPTION_PATTERN,
-		__cmd_pattern__: module.COMMAND_PATTERN,
-		__opts_width__: 3,
-		__doc_prefix__: '- ',
-
-		// these is run in the same context as the handlers... (XXX ???)
-		__align__: function(a, b, ...rest){
-			var opts_width = this.__opts_width__ || 4
-			var prefix = this.__doc_prefix__ || ''
-			b = [b, ...rest].join('\n'+ ('\t'.repeat(opts_width+1) + ' '.repeat(prefix.length)))
-			return b ?
-				(a.raw.length < opts_width*8 ?
-					[a +'\t'.repeat(opts_width - Math.floor(a.raw.length/8))+ prefix + b]
-					: [a, '\t'.repeat(opts_width)+ prefix + b])
-				: [a] },
-
-		__usage__: function(){
-			return `${ this.scriptname } [OPTIONS]` },
-		__doc__: undefined,
-		__examples__: undefined,
-		__footer__: undefined,
-
-		__unknown__: function(key){
-			console.error('Unknown option:', key)
-			process.exit(1) }, 
-
-		// these are run in the context of spec...
-		__getoptions__: function(...pattern){
-			var that = this
-			pattern = pattern.length == 0 ?
-				[this.__opt_pattern__
-					|| module.OPTION_PATTERN]
-				: pattern
-			return pattern
-				.map(function(pattern){
-					var handlers = {}
-					Object.keys(that)
-						.forEach(function(opt){
-							// skip special methods...
-							if(/^__.*__$/.test(opt) 
-									|| !pattern.test(opt)){
-								return }
-							var [k, h] = that.__gethandler__(opt)
-							handlers[k] ?
-								handlers[k][0].push(opt)
-								: (handlers[k] = [[opt], h.arg, h.doc || k, h]) })
-					return Object.values(handlers) })
-				.flat(1) },
-		__iscommand__: function(str){
-			return (this.__cmd_pattern__ 
-					|| module.COMMAND_PATTERN)
-				.test(str) 
-				&& str in this },
-		__getcommands__: function(){
-			return this.__getoptions__(
-				this.__cmd_pattern__ 
-					|| module.COMMAND_PATTERN) },
-		__gethandler__: function(key){
-			key = key.replace(
-				this.__opt_pattern__ 
-					|| module.OPTION_PATTERN, 
-				'-')
-			var seen = new Set([key])
-			while(key in this 
-					&& typeof(this[key]) == typeof('str')){
-				key = this[key] 
-				// check for loops...
-				if(seen.has(key)){
-					throw Error('Option loop detected: '+ ([...seen, key].join(' -> '))) }
-				seen.add(key) }
-			return [key, this[key]] },
-	}, spec)
-
-	// sanity check -- this will detect argument loops for builtin opts 
-	// and commands...
-	spec.__pre_check__
-		&& spec.__getoptions__(
-			spec.__opt_pattern__ || module.OPTION_PATTERN,
-			spec.__cmd_pattern__ || module.COMMAND_PATTERN)
-
-	return function(argv){
-		var opt_pattern = spec.__opt_pattern__ 
-			|| module.OPTION_PATTERN
-		argv = argv.slice()
-		var context = {
-			spec: spec,
-			argv: argv.slice(),
-
-			interpreter: argv.shift(),
-			script: argv[0],
-			scriptname: argv.shift().split(/[\\\/]/).pop(),
-
-			rest: argv,
-		}
-		var unhandled = []
-		while(argv.length > 0){
-			var arg = argv.shift()
-			var type = opt_pattern.test(arg) ?
-					'opt'
-				: spec.__iscommand__(arg) ?
-					'cmd'
-				: 'unhandled'
-			// options / commands...
-			if(type != 'unhandled'){
-				// get handler...
-				var handler = spec.__gethandler__(arg).pop()
-						|| spec.__unknown__
-				// get option value...
-				var value = (handler.arg && !opt_pattern.test(argv[0])) ?
-						argv.shift()
-					: undefined
-				// run handler...
-				;(typeof(handler) == 'function' ?
-						handler
-						: handler.handler)
-					.call(context, 
-						// pass value...
-						...(handler.arg ? [value] : []), 
-						arg, 
-						argv)
-				continue }
-			// unhandled...
-			unhandled.push(arg) }
-		return unhandled } }
-
-
-
 //
 //	Parser(spec)
 //		-> parser
+//
 //
 // spec format:
 // 	{
@@ -454,8 +212,8 @@ object.Constructor('Parser', {
 		var prefix = this.helpColumnPrefix || ''
 		b = [b, ...rest].join('\n'+ ('\t'.repeat(opts_width+1) + ' '.repeat(prefix.length)))
 		return b ?
-			(a.raw.length < opts_width*8 ?
-				[a +'\t'.repeat(opts_width - Math.floor(a.raw.length/8))+ prefix + b]
+			(a.strip.length < opts_width*8 ?
+				[a +'\t'.repeat(opts_width - Math.floor(a.strip.length/8))+ prefix + b]
 				: [a, '\t'.repeat(opts_width)+ prefix + b])
 			: [a] },
 
@@ -563,7 +321,8 @@ object.Constructor('Parser', {
 	// 	]
 	//
 	//
-	// NOTE: this is mainly needed to handle dynamic arguments...
+	// NOTE: this is mainly needed to handle dynamic arguments or print 
+	// 		error on unknown options (default)...
 	handleArgument: function(_, key){
 		if(arguments.length == 1 && arguments[0] == 'doc'){
 			return undefined }
