@@ -339,6 +339,8 @@ function(spec){
 // 	}
 //
 //
+// XXX should .options(..), .commands(..) and .handler(..) be:
+// 		.getOptions(..), .getCommands(..) and .getHandler(..) respectively???
 // XXX should we handle <scriptName>-<command> script calls???
 var Parser =
 module.Parser =
@@ -347,11 +349,14 @@ object.Constructor('Parser', {
 	optionPrefix: '-',
 	commandPrefix: '@',
 	
+	// NOTE: we only care about differentiating an option from a command
+	// 		here by design...
 	optionInputPattern: /^--?(.*)$/,
 	commandInputPattern: /^([a-zA-Z].*)$/,
 
 
 	// instance stuff...
+	// XXX revise...
 	argv: null,
 	rest: null,
 	scriptNmae: null,
@@ -367,7 +372,6 @@ object.Constructor('Parser', {
 	// 	]
 	//
 	// XXX add option groups...
-	// XXX should these be .getOptions(..) / .getCommands(..) ???
 	options: function(...prefix){
 		var that = this
 		prefix = prefix.length == 0 ?
@@ -380,7 +384,7 @@ object.Constructor('Parser', {
 					.forEach(function(opt){
 						if(!opt.startsWith(prefix)){
 							return }
-						var [k, h] = that.getHandler(opt)
+						var [k, h] = that.handler(opt)
 						h !== undefined
 							&& (handlers[k] ?
 								handlers[k][0].push(opt)
@@ -409,7 +413,8 @@ object.Constructor('Parser', {
 
 	// NOTE: this ignores options forming alias loops and dead-end 
 	// 		options...
-	getHandler: function(key){
+	handler: function(key){
+		var value
 		key = this.optionInputPattern.test(key) ?
 			key.replace(this.optionInputPattern, this.optionPrefix+'$1')
 			: key.replace(this.commandInputPattern, this.commandPrefix+'$1')
@@ -419,12 +424,12 @@ object.Constructor('Parser', {
 			key = this[key] 
 			// check for loops...
 			if(seen.has(key)){
-				return [key, undefined, 
+				return [key, undefined,
 					// report loop...
 					'loop', [...seen, key]] }
 				//throw new Error('Option loop detected: '+ ([...seen, key].join(' -> '))) }
 			seen.add(key) }
-		return [key, this[key], 
+		return [key, this[key],
 			// report dead-end if this[key] is undefined...
 			...(this[key] ? 
 				[]
@@ -527,8 +532,6 @@ object.Constructor('Parser', {
 						: e })
 				.flat()
 				.join('\n')))
-
-			// XXX should we explicitly exit here or in the runner???
 			return module.STOP }},
 
 	// common short-hands...
@@ -539,6 +542,7 @@ object.Constructor('Parser', {
 	'-verbose': '-v',
 
 
+	// Handle arguments with no explicit handlers found...
 	//
 	// 	Handle dynamic/unknown argument...
 	// 	.handleArgument(args, arg)
@@ -566,11 +570,26 @@ object.Constructor('Parser', {
 		console.error('Unknown '+ (key.startsWith('-') ? 'option:' : 'command:'), key)
 		return module.ERROR }, 
 
-	// NOTE: if this is set to false Parser will not call process.exit(..)
+	// Handle argument value conversion...
+	//
+	// If this is false/undefined value is passed to the handler as-is...
+	//
+	// Example:
+	//		handleArgumentValue: function(handler, value){
+	//			// process handler value type definition or infer type 
+	//			// and convert...
+	//			return value },
+	handleArgumentValue: false,
+
+	// Handle error exit...
+	//
+	// If this is set to false Parser will not call process.exit(..) on 
+	// error...
 	handleErrorExit: function(arg){
 		process.exit(1) },
 
 	// post parsing callbacks...
+	//
 	then: afterCallback('parsing'),
 	stop: afterCallback('stop'),
 	error: afterCallback('error'),
@@ -581,6 +600,8 @@ object.Constructor('Parser', {
 	//
 	// NOTE: this (i.e. parser) can be used as a nested command/option 
 	// 		handler...
+	//
+	// XXX ARGV: need to normalize argv -- strip out the interpreter if it is given...
 	__call__: function(context, argv){
 		var that = this
 		var nested = false
@@ -589,8 +610,7 @@ object.Constructor('Parser', {
 		argv = argv == null ?
 			process.argv.slice()
 			: argv
-		// XXX need to normalize argv...
-		// XXX ...strip out the interpreter if it is given...
+		// XXX ARGV: strip out the interpreter if it is given...
 
 		// nested command handler...
 		// XXX the condition is a bit too strong...
@@ -605,7 +625,7 @@ object.Constructor('Parser', {
 		} else {
 			var rest = this.rest = argv.slice()
 			this.argv = argv.slice()
-			// XXX revise this...
+			// XXX ARGV: revise this...
 			// 		- when run from node -- [<node>, <script>, ...]
 			// 		- when run from electron -- [<electron>, ...]
 			// 			require('electron').remove.process.argv
@@ -618,7 +638,7 @@ object.Constructor('Parser', {
 
 		var unhandled = []
 		while(argv.length > 0){
-			var arg = argv.shift()
+			var [arg, value] = argv.shift().split(/=/)
 			var type = opt_pattern.test(arg) ?
 					'opt'
 				: this.isCommand(arg) ?
@@ -627,12 +647,17 @@ object.Constructor('Parser', {
 			// options / commands...
 			if(type != 'unhandled'){
 				// get handler...
-				var handler = this.getHandler(arg)[1]
+				var handler = this.handler(arg)[1]
 						|| this.handleArgument
 				// get option value...
-				var value = (handler.arg && !opt_pattern.test(argv[0])) ?
-						argv.shift()
-					: undefined
+				value = value 
+					|| ((handler.arg && !opt_pattern.test(argv[0])) ?
+							argv.shift()
+						: undefined)
+				// value conversion...
+				value = value && this.handleArgumentValue ?
+					this.handleArgumentValue(handler, value)
+					: value
 				// run handler...
 				var res = (typeof(handler) == 'function' ?
 						handler
@@ -640,7 +665,7 @@ object.Constructor('Parser', {
 					.call(this, 
 						argv,
 						arg,
-						...(handler.arg ? [value] : []))
+						...(value ? [value] : []))
 				// handle .STOP / .ERROR
 				if(res === module.STOP || res === module.ERROR){
 					afterCallbackCall(
@@ -669,4 +694,4 @@ object.Constructor('Parser', {
 
 
 /**********************************************************************
-* vim:set ts=4 sw=4 :                               */ return module })
+* vim:set ts=4 sw=4 nowrap :                        */ return module })
