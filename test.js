@@ -40,10 +40,11 @@ argv.Parser({
 			},
 		},
 
-		'@test': argv.Parser({
+		'-test': argv.Parser({
 			// XXX ENV
-			//env: 'TEST',
-		}),
+			env: 'TEST',
+		}).then(function(){
+			console.log('TEST', ...arguments) }),
 
 		'@nested': argv.Parser({
 			doc: 'nested parser.',

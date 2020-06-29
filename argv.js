@@ -111,11 +111,6 @@ var afterCallbackCall = function(name, context, ...args){
 // 		.....or should it be the responsibility of the user defining 
 // 		the command???
 // XXX should we handle <scriptName>-<command> script calls???
-// XXX ENV might be a good idea to add handler.env = x to use the environment 
-// 		variable x as the default value for option...
-// 		...would also need to add this to -help as '(default: $VARIABLE_NAME)'
-// 		.....for this we'll need to set all the env options regardless
-// 		if they were passed by user or not...
 // XXX should .options(..), .commands(..) and .handler(..) be:
 // 		.getOptions(..), .getCommands(..) and .getHandler(..) respectively???
 var Parser =
@@ -146,7 +141,7 @@ object.Constructor('Parser', {
 	// 		...
 	// 	]
 	//
-	// XXX add option groups...
+	// XXX add option groups... (???)
 	options: function(...prefix){
 		var that = this
 		prefix = prefix.length == 0 ?
@@ -179,6 +174,10 @@ object.Constructor('Parser', {
 						1
 					: ai - bi })
 			.map(function([e, _]){ return e }) },
+	envOptions: function(){
+		return this.options()
+			.filter(function([k, a, d, handler]){
+				return !!handler.env }) },
 	commands: function(){
 		return this.options(this.commandPrefix) },
 	isCommand: function(str){
@@ -274,9 +273,7 @@ object.Constructor('Parser', {
 											return a.length - b.length})
 										.join(' | -') 
 											+' '+ (arg || ''), 
-									// XXX ENV
-									//...formDoc(doc, handler.env) ] })),
-									...formDoc(doc) ] })),
+									...formDoc(doc, handler.env) ] })),
 					// dynamic options...
 					...section('Dynamic options',
 						this.handleArgument ? 
@@ -291,9 +288,7 @@ object.Constructor('Parser', {
 										.map(function(cmd){ return cmd.slice(1)})
 										.join(' | ')
 											+' '+ (arg || ''), 
-									// XXX ENV
-									//...formDoc(doc, handler.env) ] })),
-									...formDoc(doc) ] })),
+									...formDoc(doc, handler.env) ] })),
 					// examples (optional)...
 					...section('Examples',
 						this.examples instanceof Array ?
@@ -432,6 +427,37 @@ object.Constructor('Parser', {
 
 		var opt_pattern = this.optionInputPattern
 
+		var runHandler = function(handler, arg, value, rest){
+			// get option value...
+			value = value 
+				|| ((handler.arg && !opt_pattern.test(rest[0])) ?
+						rest.shift()
+					: handler.env ?
+						process.env[handler.env]
+					: undefined)
+			// value conversion...
+			value = (value && that.handleArgumentValue) ?
+				that.handleArgumentValue(handler, value)
+				: value
+			// run handler...
+			var res = (typeof(handler) == 'function' ?
+					handler
+					: handler.handler)
+				.call(that, 
+					rest,
+					arg,
+					...(value ? [value] : []))
+			// handle .STOP / .ERROR
+			if(res === module.STOP || res === module.ERROR){
+				afterCallbackCall(
+					res === module.STOP ? 'stop' : 'error', 
+					this, arg)
+				res === module.ERROR
+					&& this.handleErrorExit
+					&& this.handleErrorExit(arg) }
+			return res }
+
+		var env = new Set()
 		var unhandled = []
 		while(rest.length > 0){
 			var [arg, value] = rest.shift().split(/=/)
@@ -445,41 +471,26 @@ object.Constructor('Parser', {
 				// get handler...
 				var handler = this.handler(arg)[1]
 						|| this.handleArgument
-				// get option value...
-				value = value 
-					|| ((handler.arg && !opt_pattern.test(rest[0])) ?
-							rest.shift()
-						// XXX ENV
-						//: handler.env ?
-						//	process.env[handler.env]
-						: undefined)
-				// value conversion...
-				value = (value && this.handleArgumentValue) ?
-					this.handleArgumentValue(handler, value)
-					: value
-				// run handler...
-				var res = (typeof(handler) == 'function' ?
-						handler
-						: handler.handler)
-					.call(this, 
-						rest,
-						arg,
-						...(value ? [value] : []))
-				// handle .STOP / .ERROR
+				// env handler called...
+				handler.env
+					&& env.add(handler)
+
+				var res = runHandler(handler, arg, value, rest)
+
+				// handle stop conditions...
 				if(res === module.STOP || res === module.ERROR){
-					afterCallbackCall(
-						res === module.STOP ? 'stop' : 'error', 
-						this, arg)
-					res === module.ERROR
-						&& this.handleErrorExit
-						&& this.handleErrorExit(arg)
-					return nested ? 
+					return nested ?
 						res
-			   			: this }
+						: this }
 				continue }
 			// unhandled...
 			unhandled.push(arg) }
-
+		// call env handlers that were not explicitly called yet...
+		this.envOptions()
+			.forEach(function([k, a, d, handler]){
+				env.has(handler)	
+					|| (handler.env in process.env
+						&& runHandler(handler, a, null, rest)) })
 		// post handlers...
 		root_value = root_value && this.handleArgumentValue ?
 			this.handleArgumentValue(this, root_value)
