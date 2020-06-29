@@ -366,9 +366,6 @@ object.Constructor('Parser', {
 	//
 	// 	.error(callback(arg))
 	//
-	//
-	// XXX .then(..) passes the full list of unhandleed args including 
-	// 		argv[0] and argv[1]...
 	then: afterCallback('parsing'),
 	stop: afterCallback('stop'),
 	error: afterCallback('error'),
