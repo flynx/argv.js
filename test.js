@@ -41,6 +41,8 @@ argv.Parser({
 		},
 
 		'@test': argv.Parser({
+			// XXX ENV
+			//env: 'TEST',
 		}),
 
 		'@nested': argv.Parser({

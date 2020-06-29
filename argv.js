@@ -62,6 +62,7 @@ var afterCallbackCall = function(name, context, ...args){
 //		'-test': {
 //			doc: 'test option.',
 //			arg: 'VALUE',
+//			env: 'VALUE',
 //			handler: function(opts, key, value){ 
 //				...
 //			}},
@@ -97,17 +98,26 @@ var afterCallbackCall = function(name, context, ...args){
 // 	}
 //
 //
+// It is recommended not to do any processing with side-effects in 
+// option/command handlers directly, prepare for the execution and to 
+// the actual work in the .then(..) callback. The reason being that the 
+// option handlers are called while parsing options and thus may not 
+// yet know of any error or stop conditions triggered later in the argv.
+//
+//
 // XXX --help should work for any command and not just for the nested 
 // 		parser commands...
 // 		...not sure how to implement this...
-// XXX should .options(..), .commands(..) and .handler(..) be:
-// 		.getOptions(..), .getCommands(..) and .getHandler(..) respectively???
+// 		.....or should it be the responsibility of the user defining 
+// 		the command???
 // XXX should we handle <scriptName>-<command> script calls???
-// XXX might be a good idea to add handler.env = x to use the environment 
+// XXX ENV might be a good idea to add handler.env = x to use the environment 
 // 		variable x as the default value for option...
 // 		...would also need to add this to -help as '(default: $VARIABLE_NAME)'
-// XXX should this be split into BaseParser (base functionality) and 
-// 		Parser (defaults)???
+// 		.....for this we'll need to set all the env options regardless
+// 		if they were passed by user or not...
+// XXX should .options(..), .commands(..) and .handler(..) be:
+// 		.getOptions(..), .getCommands(..) and .getHandler(..) respectively???
 var Parser =
 module.Parser =
 object.Constructor('Parser', {
@@ -120,10 +130,10 @@ object.Constructor('Parser', {
 	commandInputPattern: /^([a-zA-Z].*)$/,
 
 	// instance stuff...
-	// XXX revise...
 	argv: null,
 	pre_argv: null,
 	rest: null,
+
 	scriptNmae: null,
 	scriptPath: null,
 
@@ -232,6 +242,10 @@ object.Constructor('Parser', {
 			var expandVars = function(str){
 				return str
 					.replace(/\$SCRIPTNAME/g, that.scriptName) }
+			var formDoc = function(doc, env){
+				return [doc, ...(env ? 
+					[`(default value: \$${env})`] 
+					: [])] }
 			var getValue = function(name){
 				return that[name] ?
 					['', typeof(that[name]) == 'function' ?
@@ -253,14 +267,16 @@ object.Constructor('Parser', {
 					// XXX add option groups...
 					...section('Options',
 						this.options()
-							.map(function([opts, arg, doc]){
+							.map(function([opts, arg, doc, handler]){
 								return [ 
 									opts
 										.sort(function(a, b){ 
 											return a.length - b.length})
 										.join(' | -') 
 											+' '+ (arg || ''), 
-									doc] })),
+									// XXX ENV
+									//...formDoc(doc, handler.env) ] })),
+									...formDoc(doc) ] })),
 					// dynamic options...
 					...section('Dynamic options',
 						this.handleArgument ? 
@@ -269,12 +285,15 @@ object.Constructor('Parser', {
 					// commands (optional)...
 					...section('Commands',
 						this.commands()
-							.map(function([cmd, _, doc]){
+							.map(function([cmd, arg, doc, handler]){
 								return [
 									cmd
 										.map(function(cmd){ return cmd.slice(1)})
-										.join(' | '), 
-									doc] })),
+										.join(' | ')
+											+' '+ (arg || ''), 
+									// XXX ENV
+									//...formDoc(doc, handler.env) ] })),
+									...formDoc(doc) ] })),
 					// examples (optional)...
 					...section('Examples',
 						this.examples instanceof Array ?
@@ -352,7 +371,7 @@ object.Constructor('Parser', {
 	//				: value },
 	//
 	// XXX would be nice to be able to collect arrays...
-	// XXX should we define a handler.Type handler???
+	// XXX should we define a handler.type handler???
 	handleArgumentValue: false,
 
 	// Handle error exit...
@@ -407,7 +426,9 @@ object.Constructor('Parser', {
 				|| rest.unshift(main) }
 
 		this.script = rest[0]
-		this.scriptName = rest.shift().split(/[\\\/]/).pop()
+		this.scriptName = rest.shift().split(/[\\\/]/).pop() 
+		this.scriptPath = this.script.slice(0, 
+			this.script.length - this.scriptName.length)
 
 		var opt_pattern = this.optionInputPattern
 
@@ -428,9 +449,12 @@ object.Constructor('Parser', {
 				value = value 
 					|| ((handler.arg && !opt_pattern.test(rest[0])) ?
 							rest.shift()
+						// XXX ENV
+						//: handler.env ?
+						//	process.env[handler.env]
 						: undefined)
 				// value conversion...
-				value = value && this.handleArgumentValue ?
+				value = (value && this.handleArgumentValue) ?
 					this.handleArgumentValue(handler, value)
 					: value
 				// run handler...
