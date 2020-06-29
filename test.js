@@ -48,8 +48,10 @@ argv.Parser({
 
 			'@nested': argv.Parser({
 				doc: 'nested nested parser.',
-			}),
-		}),
+			}).then(function(){
+				console.log('NESTED NESTED DONE', ...arguments)}),
+		}).then(function(){
+			console.log('NESTED DONE', ...arguments) }),
 
 		// these aliases will not get shown...
 

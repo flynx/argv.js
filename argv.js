@@ -97,6 +97,9 @@ var afterCallbackCall = function(name, context, ...args){
 // 	}
 //
 //
+// XXX --help should work for any command and not just for the nested 
+// 		parser commands...
+// 		...not sure how to implement this...
 // XXX should .options(..), .commands(..) and .handler(..) be:
 // 		.getOptions(..), .getCommands(..) and .getHandler(..) respectively???
 // XXX should we handle <scriptName>-<command> script calls???
@@ -119,6 +122,7 @@ object.Constructor('Parser', {
 	// instance stuff...
 	// XXX revise...
 	argv: null,
+	pre_argv: null,
 	rest: null,
 	scriptNmae: null,
 	scriptPath: null,
@@ -360,7 +364,7 @@ object.Constructor('Parser', {
 
 	// post parsing callbacks...
 	//
-	// 	.then(callback(unhandleed))
+	// 	.then(callback(unhandleed, root_value))
 	//
 	// 	.stop(callback(arg))
 	//
@@ -372,44 +376,38 @@ object.Constructor('Parser', {
 
 	//
 	//	parser(argv)
-	//		-> unprocessed
+	//		-> parser
+	//
+	//	parser(argv, main)
+	//		-> parser
 	//
 	// NOTE: this (i.e. parser) can be used as a nested command/option 
 	// 		handler...
-	//
-	// XXX ARGV: need to normalize argv -- strip out the interpreter if it is given...
-	__call__: function(context, argv){
+	__call__: function(context, argv, main, root_value){
 		var that = this
 		var nested = false
-
-		// default argv...
-		argv = (argv == null ?
+		var rest = this.rest = 
+			argv == null ?
 				process.argv
-				: argv)
-			.slice()
-		var rest = this.rest = argv.slice()
-
-		// XXX ARGV: strip out the interpreter if it is given... (???)
+				: argv
+		argv = rest.slice() 
+		main = main 
+			|| require.main.filename
 
 		// nested command handler...
-		// XXX the condition is a bit too strong...
 		if(context instanceof Parser){
-			this.script = this.scriptName = 
-				context.scriptName +' '+ arguments[2]
-			this.argv = [context.scriptName, this.scriptName, ...argv]
 			nested = true
+			main = context.scriptName +' '+ main 
+			rest.unshift(main) }
 
-		// root parser...
-		} else {
-			this.argv = argv.slice()
-			// XXX ARGV: revise this...
-			// 		- when run from node -- [<node>, <script>, ...]
-			// 		- when run from electron -- [<electron>, ...]
-			// 			require('electron').remove.process.argv
-			this.interpreter = rest.shift()
-			this.script = rest[0]
-			this.scriptName = rest.shift().split(/[\\\/]/).pop()
-		}
+		// normalize the argv...
+		if(main != null){
+			this.pre_argv = rest.splice(0, rest.indexOf(main))
+			rest.includes(main)
+				|| rest.unshift(main) }
+
+		this.script = rest[0]
+		this.scriptName = rest.shift().split(/[\\\/]/).pop()
 
 		var opt_pattern = this.optionInputPattern
 
@@ -459,7 +457,11 @@ object.Constructor('Parser', {
 			unhandled.push(arg) }
 
 		// post handlers...
-		afterCallbackCall('parsing', this, unhandled)
+		root_value = root_value && this.handleArgumentValue ?
+			this.handleArgumentValue(this, root_value)
+			: root_value
+		afterCallbackCall('parsing', this, unhandled, root_value)
+
 		return this },
 
 	// NOTE: see general doc...
