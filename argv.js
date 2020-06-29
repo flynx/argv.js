@@ -374,7 +374,8 @@ object.Constructor('Parser', {
 	// If this is set to false Parser will not call process.exit(..) on 
 	// error...
 	handleErrorExit: function(arg){
-		process.exit(1) },
+		typeof(process) != 'unhandled'
+			&& process.exit(1) },
 
 	// post parsing callbacks...
 	//
@@ -402,7 +403,9 @@ object.Constructor('Parser', {
 		var nested = false
 		var rest = this.rest = 
 			argv == null ?
-				process.argv
+				(typeof(process) != 'unhandled' ?
+					process.argv 
+					: [])
 				: argv
 		argv = rest.slice() 
 		main = main 
@@ -432,7 +435,7 @@ object.Constructor('Parser', {
 			value = value 
 				|| ((handler.arg && !opt_pattern.test(rest[0])) ?
 						rest.shift()
-					: handler.env ?
+					: (typeof(process) != 'unhandled' && handler.env) ?
 						process.env[handler.env]
 					: undefined)
 			// value conversion...
@@ -486,11 +489,12 @@ object.Constructor('Parser', {
 			// unhandled...
 			unhandled.push(arg) }
 		// call env handlers that were not explicitly called yet...
-		this.envOptions()
-			.forEach(function([k, a, d, handler]){
-				env.has(handler)	
-					|| (handler.env in process.env
-						&& runHandler(handler, a, null, rest)) })
+		typeof(process) != 'unhandled'
+			&& this.envOptions()
+				.forEach(function([k, a, d, handler]){
+					env.has(handler)	
+						|| (handler.env in process.env
+							&& runHandler(handler, a, null, rest)) })
 		// post handlers...
 		root_value = root_value && this.handleArgumentValue ?
 			this.handleArgumentValue(this, root_value)
