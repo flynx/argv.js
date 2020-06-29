@@ -100,18 +100,21 @@ var afterCallbackCall = function(name, context, ...args){
 // XXX should .options(..), .commands(..) and .handler(..) be:
 // 		.getOptions(..), .getCommands(..) and .getHandler(..) respectively???
 // XXX should we handle <scriptName>-<command> script calls???
+// XXX might be a good idea to add handler.env = x to use the environment 
+// 		variable x as the default value for option...
+// 		...would also need to add this to -help as '(default: $VARIABLE_NAME)'
+// XXX should this be split into BaseParser (base functionality) and 
+// 		Parser (defaults)???
 var Parser =
 module.Parser =
 object.Constructor('Parser', {
 	// config...
 	optionPrefix: '-',
 	commandPrefix: '@',
-	
 	// NOTE: we only care about differentiating an option from a command
 	// 		here by design...
 	optionInputPattern: /^--?(.*)$/,
 	commandInputPattern: /^([a-zA-Z].*)$/,
-
 
 	// instance stuff...
 	// XXX revise...
@@ -164,11 +167,9 @@ object.Constructor('Parser', {
 			.map(function([e, _]){ return e }) },
 	commands: function(){
 		return this.options(this.commandPrefix) },
-
 	isCommand: function(str){
 		return this.commandInputPattern.test(str) 
 			&& (this.commandPrefix + str) in this },
-
 	// NOTE: this ignores options forming alias loops and dead-end 
 	// 		options...
 	handler: function(key){
@@ -193,15 +194,14 @@ object.Constructor('Parser', {
 				[]
 				: ['dead-end'])] },
 
-
 	// XXX need to test option definitions... (???)
 	// 		i.e. report loops and dead ends...
-
 
 	// doc stuff...
 	helpColumnOffset: 3,
 	helpColumnPrefix: '- ',
 
+	// doc sections...
 	usage: '$SCRIPTNAME [OPTIONS]',
 	doc: undefined,
 	examples: undefined,
@@ -334,10 +334,21 @@ object.Constructor('Parser', {
 	// If this is false/undefined value is passed to the handler as-is...
 	//
 	// Example:
+	// 		typeHandler: {
+	// 			int: parseInt,
+	// 			float: parseFloat,	
+	// 			number: function(v){ return new Number(v) },
+	// 			string: function(v){ return v.toString() },
+	// 			...
+	// 		},
 	//		handleArgumentValue: function(handler, value){
-	//			// process handler value type definition or infer type 
-	//			// and convert...
-	//			return value },
+	//			var convert = this.typeHandler[handler.type]
+	//			return convert ?
+	//				convert(value)
+	//				: value },
+	//
+	// XXX would be nice to be able to collect arrays...
+	// XXX should we define a handler.Type handler???
 	handleArgumentValue: false,
 
 	// Handle error exit...
@@ -356,7 +367,6 @@ object.Constructor('Parser', {
 	// 	.error(callback(arg))
 	//
 	//
-	// XXX need to document the arguments to each handler/callback...
 	// XXX .then(..) passes the full list of unhandleed args including 
 	// 		argv[0] and argv[1]...
 	then: afterCallback('parsing'),
