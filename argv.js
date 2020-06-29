@@ -106,7 +106,7 @@ var afterCallbackCall = function(name, context, ...args){
 //
 //
 // XXX --help should work for any command and not just for the nested 
-// 		parser commands...
+// 		parser commands... (???)
 // 		...not sure how to implement this...
 // 		.....or should it be the responsibility of the user defining 
 // 		the command???
@@ -141,7 +141,6 @@ object.Constructor('Parser', {
 	// 		...
 	// 	]
 	//
-	// XXX add option groups... (???)
 	options: function(...prefix){
 		var that = this
 		prefix = prefix.length == 0 ?
@@ -220,6 +219,7 @@ object.Constructor('Parser', {
 	examples: undefined,
 	footer: undefined,
 
+	// XXX should wrap long lines...
 	alignColumns: function(a, b, ...rest){
 		var opts_width = this.helpColumnOffset || 4
 		var prefix = this.helpColumnPrefix || ''
@@ -365,7 +365,6 @@ object.Constructor('Parser', {
 	//				convert(value)
 	//				: value },
 	//
-	// XXX would be nice to be able to collect arrays...
 	// XXX should we define a handler.type handler???
 	handleArgumentValue: false,
 
