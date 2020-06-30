@@ -105,6 +105,8 @@ var afterCallbackCall = function(name, context, ...args){
 // yet know of any error or stop conditions triggered later in the argv.
 //
 //
+// XXX add merged options...
+// 		-a -b -c -> -abc
 // XXX --help should work for any command and not just for the nested 
 // 		parser commands... (???)
 // 		...not sure how to implement this...
@@ -117,6 +119,7 @@ var Parser =
 module.Parser =
 object.Constructor('Parser', {
 	// config...
+	splitOptions: true,
 	optionPrefix: '-',
 	commandPrefix: '@',
 	// NOTE: we only care about differentiating an option from a command
@@ -311,6 +314,7 @@ object.Constructor('Parser', {
 			return module.STOP }},
 
 	// common short-hands...
+	//
 	// NOTE: defining this as a loop will enable the user to define any 
 	// 		of the aliases as the handler and thus breaking the loop...
 	// NOTE: unless the loop is broken this set of options is not usable.
@@ -360,7 +364,9 @@ object.Constructor('Parser', {
 	// 			...
 	// 		},
 	//		handleArgumentValue: function(handler, value){
-	//			var convert = this.typeHandler[handler.type]
+	//			var convert = typeof(handler.type) == 'function' ?
+	//				handler.type
+	//				: this.typeHandler[handler.type]
 	//			return convert ?
 	//				convert(value)
 	//				: value },
@@ -429,6 +435,7 @@ object.Constructor('Parser', {
 
 		var opt_pattern = this.optionInputPattern
 
+		// helpers...
 		var runHandler = function(handler, arg, value, rest){
 			// get option value...
 			value = value 
@@ -458,6 +465,18 @@ object.Constructor('Parser', {
 					&& this.handleErrorExit
 					&& this.handleErrorExit(arg) }
 			return res }
+		var splitArgs = function(arg, rest){
+			// skip single letter unknown options or '--' options...
+			if(arg.length <= 2 
+					|| arg.startsWith(that.optionPrefix.repeat(2))){
+				return undefined }
+			// split and normalize...
+			var [a, ...r] = 
+				[...arg.slice(1)]
+					.map(function(e){ return '-'+ e })
+			// push new options back to option "stack"...
+			rest.splice(0, 0, ...r)
+			return that.handler(a)[1] }
 
 		var env = new Set()
 		var unhandled = []
@@ -472,7 +491,12 @@ object.Constructor('Parser', {
 			if(type != 'unhandled'){
 				// get handler...
 				var handler = this.handler(arg)[1]
-						|| this.handleArgument
+					// handle merged options...
+					|| (type == 'opt' 
+						&& this.splitOptions
+						&& splitArgs(arg, rest))
+					// dynamic/error...
+					|| this.handleArgument
 				// env handler called...
 				handler.env
 					&& env.add(handler)
