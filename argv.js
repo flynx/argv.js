@@ -1,5 +1,19 @@
 /**********************************************************************
 * 
+* argv.js
+*
+* A simple argv parser
+*
+* Motivation:
+*	I needed a new argv parser for a quick and dirty project I was working 
+*	on and evaluating and selecting the proper existing parser and then 
+*	learning its API, quirks and adapting the architecture to it seemed 
+*	to be more complicated, require more effort and far less fun than 
+*	putting together a trivial parser myself in a couple of hours.  
+*	This code is an evolution of that parser.
+*
+* Repo and docs:
+* 	https://github.com/flynx/argv.js
 *
 *
 **********************************************************************/
