@@ -17,12 +17,16 @@ This code is an evolution of that parser.
 
 - Simple
 - Supports both the _option_ (a-la `find`) and _command_ (a-la `git`) paradigms
-- Nestable &ndash; parsers can be nested as option/command handlers defining 
-  independent nested contexts
-- Option expansion &ndash; `-abc` expands to `-a -b -c` if `-abc` is not defined
-- Option/command value passing
-- Environment variable option/command values &ndash; env can control option 
-  defaults
+- Nestable  
+  parsers can be nested as option/command handlers defining independent 
+  nested contexts
+- Option expansion  
+  `-abc` expands to `-a -b -c` if `-abc` is not defined
+- Option/command value passing  
+  implicit `-a 123` (requires definition or manual handling) or explicit 
+  `-a=123`
+- Environment variable option/command values  
+  env can control option defaults
 - Reasonable defaults
   - `-help` generator
   - common option aliases
@@ -30,6 +34,9 @@ This code is an evolution of that parser.
   - Hooks for option value conversion _(XXX should this be implemented???)_
   - Hooks for dynamic option/command handling
   - Customizable error and stop condition handling
+
+
+<!-- XXX ### Alternatives -->
 
 
 ## Installation

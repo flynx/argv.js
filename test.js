@@ -56,6 +56,9 @@ argv.Parser({
 		}).then(function(){
 			console.log('NESTED DONE', ...arguments) }),
 
+		'-': function(){
+			console.log('OPTION: "-"') },
+
 		// these aliases will not get shown...
 
 		// dead-end alias...

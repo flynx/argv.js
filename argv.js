@@ -199,10 +199,13 @@ object.Constructor('Parser', {
 	isCommand: function(str){
 		return this.commandInputPattern.test(str) 
 			&& (this.commandPrefix + str) in this },
+	// NOTE: this ignores any arguments values present in the key...
 	// NOTE: this ignores options forming alias loops and dead-end 
 	// 		options...
 	handler: function(key){
-		var value
+		// clear arg value...
+		key = key.split(/=/).shift()
+		// option or command?
 		key = this.optionInputPattern.test(key) ?
 			key.replace(this.optionInputPattern, this.optionPrefix+'$1')
 			: key.replace(this.commandInputPattern, this.commandPrefix+'$1')
@@ -231,6 +234,8 @@ object.Constructor('Parser', {
 	helpColumnPrefix: '- ',
 
 	// doc sections...
+	// XXX
+	version: undefined,
 	usage: '$SCRIPTNAME [OPTIONS]',
 	doc: undefined,
 	examples: undefined,
@@ -451,7 +456,8 @@ object.Constructor('Parser', {
 		var opt_pattern = this.optionInputPattern
 
 		// helpers...
-		var runHandler = function(handler, arg, value, rest){
+		var runHandler = function(handler, arg, rest){
+			var [arg, value] = arg.split(/=/)
 			// get option value...
 			value = value 
 				|| ((handler.arg && !opt_pattern.test(rest[0])) ?
@@ -480,7 +486,10 @@ object.Constructor('Parser', {
 					&& this.handleErrorExit
 					&& this.handleErrorExit(arg) }
 			return res }
+		// NOTE: if successful this needs to modify the arg, thus it 
+		// 		returns both the new first arg and the handler...
 		var splitArgs = function(arg, rest){
+			var [arg, value] = arg.split(/=/)
 			// skip single letter unknown options or '--' options...
 			if(arg.length <= 2 
 					|| arg.startsWith(that.optionPrefix.repeat(2))){
@@ -489,14 +498,19 @@ object.Constructor('Parser', {
 			var [a, ...r] = 
 				[...arg.slice(1)]
 					.map(function(e){ return '-'+ e })
+			// push the value to the last arg...
+			value !== undefined
+				&& r.push(r.pop() +'='+ value) 
 			// push new options back to option "stack"...
 			rest.splice(0, 0, ...r)
-			return that.handler(a)[1] }
+			var handler = that.handler(a)[1]
+			return handler 
+				&& [a, handler] }
 
 		var env = new Set()
 		var unhandled = []
 		while(rest.length > 0){
-			var [arg, value] = rest.shift().split(/=/)
+			var arg = rest.shift()
 			var type = opt_pattern.test(arg) ?
 					'opt'
 				: this.isCommand(arg) ?
@@ -505,18 +519,24 @@ object.Constructor('Parser', {
 			// options / commands...
 			if(type != 'unhandled'){
 				// get handler...
+				// XXX revise -- arg replacement feels clunky...
 				var handler = this.handler(arg)[1]
-					// handle merged options...
+					// handle merged options
+					// NOTE: if successful returns array...
 					|| (type == 'opt' 
 						&& this.splitOptions
 						&& splitArgs(arg, rest))
-					// dynamic/error...
+					// dynamic or error...
 					|| this.handleArgument
+				// normalize output of splitArgs(..)
+				;[arg, handler] = handler instanceof Array ?
+					handler
+					: [arg, handler]
 				// env handler called...
 				handler.env
 					&& env.add(handler)
 
-				var res = runHandler(handler, arg, value, rest)
+				var res = runHandler(handler, arg, rest)
 
 				// handle stop conditions...
 				if(res === module.STOP || res === module.ERROR){
