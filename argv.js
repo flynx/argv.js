@@ -105,8 +105,8 @@ var afterCallbackCall = function(name, context, ...args){
 // yet know of any error or stop conditions triggered later in the argv.
 //
 //
-// XXX add merged options...
-// 		-a -b -c -> -abc
+// XXX add support for - or -- stdin handling... (???)
+// XXX add support for outputting strings instead of console.log(..)
 // XXX --help should work for any command and not just for the nested 
 // 		parser commands... (???)
 // 		...not sure how to implement this...
@@ -346,6 +346,7 @@ object.Constructor('Parser', {
 	// NOTE: this is mainly needed to handle dynamic arguments or print 
 	// 		error on unknown options (default)...
 	handleArgument: function(_, key){
+		// doc handler...
 		if(arguments.length == 1 && arguments[0] == 'doc'){
 			return undefined }
 		console.error('Unknown '+ (key.startsWith('-') ? 'option:' : 'command:'), key)
