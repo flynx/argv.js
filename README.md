@@ -42,7 +42,7 @@ $ npm install ig-argv
 
 Create a script and make it runnable
 ```shell
-$ toch script.js
+$ touch script.js
 $ chmod +x script.js
 ```
 
