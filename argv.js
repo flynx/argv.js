@@ -38,17 +38,21 @@ module.ERROR =
 //---------------------------------------------------------------------
 // helpers...
 
+// XXX do we need to remove handlers???
+// XXX does this need to be an event constructor???
 var afterCallback = function(name){
 	var attr = '__after_'+ name
 	return function(func){
-		(this[attr] = this[attr] || []).push(func)
+		var that = this
+		var args = [...arguments]
+		;(args.length == 1 && typeof(func) == 'function') ?
+			// add handler...
+			(this[attr] = this[attr] || []).push(func)
+			// call handlers...
+			: (this[attr] || [])
+				.forEach(function(func){
+					func.call(that, ...args) })
 		return this } }
-
-
-var afterCallbackCall = function(name, context, ...args){
-	return (context['__after_'+ name] || [])
-		.forEach(function(func){
-			func.call(context, ...args) }) }
 
 
 
@@ -119,7 +123,8 @@ var afterCallbackCall = function(name, context, ...args){
 // yet know of any error or stop conditions triggered later in the argv.
 //
 //
-// XXX add support for - or -- stdin handling... (???)
+// XXX handle .required options...
+// XXX handle option types???
 // XXX add support for outputting strings instead of console.log(..)
 // XXX --help should work for any command and not just for the nested 
 // 		parser commands... (???)
@@ -234,11 +239,13 @@ object.Constructor('Parser', {
 	helpColumnPrefix: '- ',
 
 	// doc sections...
-	// XXX
 	version: undefined,
+	license: undefined,
 	usage: '$SCRIPTNAME [OPTIONS]',
 	doc: undefined,
 	examples: undefined,
+	// XXX add license and version info...
+	//footer: '$SCRIPTNAME v:$VERSION',
 	footer: undefined,
 
 	// XXX should wrap long lines...
@@ -251,18 +258,22 @@ object.Constructor('Parser', {
 				[a +'\t'.repeat(opts_width - Math.floor(a.strip.length/8))+ prefix + b]
 				: [a, '\t'.repeat(opts_width)+ prefix + b])
 			: [a] },
+	expandTextVars: function(text){
+		return text
+			.replace(/\$LICENSE/g, this.license || '')
+			.replace(/\$VERSION/g, this.version || '0.0.0')
+			.replace(/\$SCRIPTNAME/g, this.scriptName) },
 
 	// Builtin options/commands...
+	// XXX might be a good idea to keep short options in a separate column...
 	'-h': '-help',
 	'-help': {
-		doc: 'print this message and exit.',
+		doc: 'print this message and exit',
 		priority: 99,
 		handler: function(argv, key, value){
 			var that = this
 
-			var expandVars = function(str){
-				return str
-					.replace(/\$SCRIPTNAME/g, that.scriptName) }
+			var expandVars = this.expandTextVars.bind(this)
 			var formDoc = function(doc, env){
 				return [doc, ...(env ? 
 					[`(default value: \$${env})`] 
@@ -332,13 +343,31 @@ object.Constructor('Parser', {
 				.join('\n')))
 			return module.STOP }},
 
+	'-v': '-version',
+	'-version': {
+		doc: 'show $SCRIPTNAME verion and exit',
+		priority: 99,
+		handler: function(){
+			console.log(this.version || '0.0.0')
+			return module.STOP }, },
+
+	/*/ XXX do we actually need this???
+	//		doing this is trivial, need to give a practical example...
+	// XXX would be nice to be able to take the rest of the options and 
+	// 		pass them to .then(..)...
+	'-': {
+		doc: 'stop processing arguments',
+		handler: function(){
+			return module.STOP }, },
+	//*/
+	
 	// common short-hands...
 	//
 	// NOTE: defining this as a loop will enable the user to define any 
 	// 		of the aliases as the handler and thus breaking the loop...
 	// NOTE: unless the loop is broken this set of options is not usable.
-	'-v': '-verbose',
-	'-verbose': '-v',
+	//'-v': '-verbose',
+	//'-verbose': '-v',
 
 
 	// Handle arguments with no explicit handlers found...
@@ -404,11 +433,10 @@ object.Constructor('Parser', {
 
 	// post parsing callbacks...
 	//
-	// 	.then(callback(unhandleed, root_value))
+	// 	.then(callback(unhandleed, root_value, rest))
 	//
-	// 	.stop(callback(arg))
-	//
-	// 	.error(callback(arg))
+	// 	.stop(callback(arg, rest))
+	// 	.error(callback(arg, rest))
 	//
 	then: afterCallback('parsing'),
 	stop: afterCallback('stop'),
@@ -479,12 +507,12 @@ object.Constructor('Parser', {
 					...(value ? [value] : []))
 			// handle .STOP / .ERROR
 			if(res === module.STOP || res === module.ERROR){
-				afterCallbackCall(
-					res === module.STOP ? 'stop' : 'error', 
-					this, arg)
+				that[res === module.STOP ? 
+					'stop' 
+					: 'error'](arg, rest)
 				res === module.ERROR
-					&& this.handleErrorExit
-					&& this.handleErrorExit(arg) }
+					&& that.handleErrorExit
+					&& that.handleErrorExit(arg) }
 			return res }
 		// NOTE: if successful this needs to modify the arg, thus it 
 		// 		returns both the new first arg and the handler...
@@ -545,7 +573,8 @@ object.Constructor('Parser', {
 						: this }
 				continue }
 			// unhandled...
-			unhandled.push(arg) }
+			arg 
+				&& unhandled.push(arg) }
 		// call env handlers that were not explicitly called yet...
 		typeof(process) != 'unhandled'
 			&& this.envOptions()
@@ -557,9 +586,7 @@ object.Constructor('Parser', {
 		root_value = root_value && this.handleArgumentValue ?
 			this.handleArgumentValue(this, root_value)
 			: root_value
-		afterCallbackCall('parsing', this, unhandled, root_value)
-
-		return this },
+		return this.then(unhandled, root_value, rest) },
 
 	// NOTE: see general doc...
 	__init__: function(spec){
