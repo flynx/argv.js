@@ -43,6 +43,7 @@ argv.Parser({
 		'-test': argv.Parser({
 			// XXX ENV
 			env: 'TEST',
+			default: 'moo',
 		}).then(function(){
 			console.log('TEST', ...arguments) }),
 

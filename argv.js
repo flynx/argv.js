@@ -28,10 +28,14 @@ var object = require('ig-object')
 //---------------------------------------------------------------------
 
 module.STOP = 
-	{doc: 'stop option processing'}
+	{doc: 'stop option processing, triggers .stop(..) handlers'}
+
+// XXX rename???
+module.THEN = 
+	{doc: 'break option processing, triggers .then(..) handlers'}
 
 module.ERROR = 
-	{doc: 'option processing error'}
+	{doc: 'option processing error, triggers .error(..) handlers'}
 
 
 
@@ -79,8 +83,14 @@ var afterCallback = function(name){
 //	    '-t': '-test',
 //		'-test': {
 //			doc: 'test option.',
+//
 //			arg: 'VALUE',
+//
 //			env: 'VALUE',
+//
+//			// XXX
+//			default: 123,
+//
 //			handler: function(opts, key, value){ 
 //				...
 //			}},
@@ -124,6 +134,7 @@ var afterCallback = function(name){
 //
 //
 // XXX handle .required options...
+// XXX handle .default value
 // XXX handle option types???
 // XXX add support for outputting strings instead of console.log(..)
 // XXX --help should work for any command and not just for the nested 
@@ -195,10 +206,11 @@ object.Constructor('Parser', {
 						1
 					: ai - bi })
 			.map(function([e, _]){ return e }) },
-	envOptions: function(){
+	optionsWithValue: function(){
 		return this.options()
 			.filter(function([k, a, d, handler]){
-				return !!handler.env }) },
+				return !!handler.env 
+					|| 'default' in handler }) },
 	commands: function(){
 		return this.options(this.commandPrefix) },
 	isCommand: function(str){
@@ -237,6 +249,8 @@ object.Constructor('Parser', {
 	// doc stuff...
 	helpColumnOffset: 3,
 	helpColumnPrefix: '- ',
+	//helpOptionSeparator: ' | ',
+	helpArgumentSeparator: ', ',
 
 	// doc sections...
 	version: undefined,
@@ -266,13 +280,13 @@ object.Constructor('Parser', {
 			.replace(/\$SCRIPTNAME/g, this.scriptName) },
 
 	// Builtin options/commands...
-	// XXX might be a good idea to keep short options in a separate column...
 	'-h': '-help',
 	'-help': {
 		doc: 'print this message and exit',
 		priority: 99,
 		handler: function(argv, key, value){
 			var that = this
+			var sep = this.helpArgumentSeparator
 			var expandVars = this.expandTextVars.bind(this)
 			var formDoc = function(doc, env){
 				return [doc, ...(env ? 
@@ -299,15 +313,22 @@ object.Constructor('Parser', {
 					// XXX add option groups...
 					...section('Options',
 						this.options()
+							.filter(function([o, a, doc]){
+								return doc !== false })
 							.map(function([opts, arg, doc, handler]){
 								return [ 
-									// XXX might be a good idea to keep 
-									// 		short options in a separate 
-									// 		column...
 									opts
 										.sort(function(a, b){ 
 											return a.length - b.length})
-										.join(' | -') 
+										.map(function(o, i){
+											return o.length <= 2 ? 
+													o 
+												// no short options -> offset first long option...
+												: i == 0 ?
+													' '.repeat(sep.length + 2) +'-'+ o
+												// add extra '-' to long options...
+												: '-'+ o })
+										.join(sep) 
 											+' '+ (arg || ''), 
 									...formDoc(doc, handler.env) ] })),
 					// dynamic options...
@@ -322,7 +343,7 @@ object.Constructor('Parser', {
 								return [
 									cmd
 										.map(function(cmd){ return cmd.slice(1)})
-										.join(' | ')
+										.join(sep)
 											+' '+ (arg || ''), 
 									...formDoc(doc, handler.env) ] })),
 					// examples (optional)...
@@ -354,19 +375,11 @@ object.Constructor('Parser', {
 			console.log(this.version || '0.0.0')
 			return module.STOP }, },
 
-	/*/ XXX do we actually need this???
-	//		doing this is trivial, need to give a practical example...
-	// XXX to stop processing we need to empty rest...
-	// 		...need to workout a mechanic for this and then passing rest 
-	// 		to .then(..)... 
-	// 		...one way to do this is returning a module.BREAK (rename???)...
-	// XXX would be nice to be able to take the rest of the options and 
-	// 		pass them to .then(..)...
+	// XXX do we actually need this???
 	'-': {
-		doc: 'stop processing arguments',
+		doc: 'stop processing arguments after this point',
 		handler: function(){
-			return module.STOP }, },
-	//*/
+			return module.THEN }, },
 	
 	// common short-hands...
 	//
@@ -383,6 +396,7 @@ object.Constructor('Parser', {
 	// 	.handleArgument(args, arg)
 	// 		-> module.ERROR
 	// 		-> module.STOP
+	// 		-> module.THEN
 	// 		-> result
 	//
 	// 	Get dynamic argument doc...
@@ -438,6 +452,7 @@ object.Constructor('Parser', {
 		typeof(process) != 'unhandled'
 			&& process.exit(1) },
 
+
 	// post parsing callbacks...
 	//
 	// 	.then(callback(unhandleed, root_value, rest))
@@ -448,6 +463,15 @@ object.Constructor('Parser', {
 	then: afterCallback('parsing'),
 	stop: afterCallback('stop'),
 	error: afterCallback('error'),
+
+	// remove callback...
+	off: function(evt, handler){
+		var l = this['__after_'+evt]
+		var i = l.indexOf(handler)
+		i >= 0
+			&& l.splice(i, 1)
+		return this },
+
 
 	//
 	//	parser(argv)
@@ -494,14 +518,17 @@ object.Constructor('Parser', {
 		var runHandler = function(handler, arg, rest){
 			var [arg, value] = arg.split(/=/)
 			// get option value...
-			value = value 
-				|| ((handler.arg && !opt_pattern.test(rest[0])) ?
+			value = value == null ?
+				((handler.arg && !opt_pattern.test(rest[0])) ?
 						rest.shift()
-					: (typeof(process) != 'unhandled' && handler.env) ?
-						process.env[handler.env]
-					: undefined)
+					: (typeof(process) != 'undefined' && handler.env) ?
+						(process.env[handler.env] 
+							|| handler.default)
+					: handler.default)
+				: value
 			// value conversion...
-			value = (value && that.handleArgumentValue) ?
+			value = (value != null 
+					&& that.handleArgumentValue) ?
 				that.handleArgumentValue(handler, value)
 				: value
 			// run handler...
@@ -511,7 +538,9 @@ object.Constructor('Parser', {
 				.call(that, 
 					rest,
 					arg,
-					...(value ? [value] : []))
+					...(value != null ? 
+						[value] 
+						: []))
 			// handle .STOP / .ERROR
 			if(res === module.STOP || res === module.ERROR){
 				that[res === module.STOP ? 
@@ -542,7 +571,7 @@ object.Constructor('Parser', {
 			return handler 
 				&& [a, handler] }
 
-		var env = new Set()
+		var values = new Set()
 		var unhandled = []
 		while(rest.length > 0){
 			var arg = rest.shift()
@@ -567,9 +596,10 @@ object.Constructor('Parser', {
 				;[arg, handler] = handler instanceof Array ?
 					handler
 					: [arg, handler]
-				// env handler called...
-				handler.env
-					&& env.add(handler)
+				// value handler called...
+				;(handler.env 
+						|| 'default' in handler)
+					&& values.add(handler)
 
 				var res = runHandler(handler, arg, rest)
 
@@ -578,17 +608,21 @@ object.Constructor('Parser', {
 					return nested ?
 						res
 						: this }
+				// break processing -> .then(...)
+				if(res === module.THEN){
+					arg = null
+					break }
 				continue }
 			// unhandled...
 			arg 
 				&& unhandled.push(arg) }
-		// call env handlers that were not explicitly called yet...
+		// call value handlers that were not explicitly called yet...
 		typeof(process) != 'unhandled'
-			&& this.envOptions()
+			&& this.optionsWithValue()
 				.forEach(function([k, a, d, handler]){
-					env.has(handler)	
-						|| (handler.env in process.env
-							&& runHandler(handler, a, null, rest)) })
+					values.has(handler)	
+						|| ((handler.env in process.env || handler.default)
+							&& runHandler(handler, a || k[0], null, rest)) })
 		// post handlers...
 		root_value = root_value && this.handleArgumentValue ?
 			this.handleArgumentValue(this, root_value)
