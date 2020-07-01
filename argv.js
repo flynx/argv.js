@@ -243,6 +243,7 @@ object.Constructor('Parser', {
 	license: undefined,
 	usage: '$SCRIPTNAME [OPTIONS]',
 	doc: undefined,
+	// XXX test this with string value...
 	examples: undefined,
 	// XXX add license and version info...
 	//footer: '$SCRIPTNAME v:$VERSION',
@@ -272,7 +273,6 @@ object.Constructor('Parser', {
 		priority: 99,
 		handler: function(argv, key, value){
 			var that = this
-
 			var expandVars = this.expandTextVars.bind(this)
 			var formDoc = function(doc, env){
 				return [doc, ...(env ? 
@@ -301,6 +301,9 @@ object.Constructor('Parser', {
 						this.options()
 							.map(function([opts, arg, doc, handler]){
 								return [ 
+									// XXX might be a good idea to keep 
+									// 		short options in a separate 
+									// 		column...
 									opts
 										.sort(function(a, b){ 
 											return a.length - b.length})
