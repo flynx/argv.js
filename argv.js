@@ -375,6 +375,13 @@ object.Constructor('Parser', {
 			console.log(this.version || '0.0.0')
 			return module.STOP }, },
 
+	// Stop processing arguments and continue into .then(..) handlers...
+	//
+	// If .then(..) does not handle rest in the nested context then this
+	// context will be returned to the parent context, effectively 
+	// stopping the nested context and letting the parent continue.
+	//
+	// XXX should we be able to force the parent/root to also stop???
 	// XXX do we actually need this???
 	'-': {
 		doc: 'stop processing arguments after this point',

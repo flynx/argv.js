@@ -41,7 +41,6 @@ argv.Parser({
 		},
 
 		'-test': argv.Parser({
-			// XXX ENV
 			env: 'TEST',
 			default: 'moo',
 		}).then(function(){
@@ -97,11 +96,10 @@ p(['test', 'nested', '-h'])
 p(['test', '-h'])
 //*/
 
-if(typeof(__filename) != 'undefined'
-		&& __filename == (require.main || {}).filename){
+typeof(__filename) != 'undefined'
+	&& __filename == (require.main || {}).filename
+	&& p()
 
-	p(process.argv)
-}
 
 
 /**********************************************************************
