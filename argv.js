@@ -137,6 +137,12 @@ var afterCallback = function(name){
 // NOTE: essentially this parser is a very basic stack language...
 // 		XXX can we implement the whole thing directly as a stack language???
 //
+// XXX might be a good idea to add a default .handler -- if a user does 
+// 		not define a .handler just set a value... the question is on what?
+// XXX might also be a good idea to return clone rather than this... i.e.
+// 		treat the parser object as a result factory...
+// 		...this would resolve any issues with misxing parse state with 
+// 		grammer... etc.
 // XXX handle option types???
 // XXX --help should work for any command and not just for the nested 
 // 		parser commands... (???)
@@ -169,11 +175,11 @@ object.Constructor('Parser', {
 
 	// output...
 	// XXX is this the right way to go???
-	print: function(){
-		console.log(...arguments)
+	print: function(...args){
+		console.log(...args)
 		return this },
-	printError: function(){
-		console.error(...arguments)
+	printError: function(...args){
+		console.error(...args)
 		return this },
 
 
