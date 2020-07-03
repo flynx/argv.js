@@ -28,8 +28,9 @@ This code is an evolution of that parser.
 - Environment variable option/command values  
   env can control option defaults
 - Reasonable defaults
-  - `-help`
-  - '-version'
+  - `-help` &ndash; generate and print help,
+  - `-version` &ndash; print version,
+  - `-` &ndash; stop argument processing,
   - common option aliases
 - Extensible:
   - Hooks for option value conversion _(XXX should this be implemented???)_

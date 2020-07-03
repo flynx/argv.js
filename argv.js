@@ -82,14 +82,15 @@ var afterCallback = function(name){
 //	    //		the function handler above to same effect...
 //	    '-t': '-test',
 //		'-test': {
-//			doc: 'test option.',
+//			doc: 'test option',
 //
 //			arg: 'VALUE',
 //
 //			env: 'VALUE',
 //
-//			// XXX
 //			default: 123,
+//
+//			required: true,
 //
 //			handler: function(opts, key, value){ 
 //				...
@@ -133,10 +134,10 @@ var afterCallback = function(name){
 // yet know of any error or stop conditions triggered later in the argv.
 //
 //
-// XXX handle .required options...
-// XXX handle .default value
+// NOTE: essentially this parser is a very basic stack language...
+// 		XXX can we implement the whole thing directly as a stack language???
+//
 // XXX handle option types???
-// XXX add support for outputting strings instead of console.log(..)
 // XXX --help should work for any command and not just for the nested 
 // 		parser commands... (???)
 // 		...not sure how to implement this...
@@ -166,6 +167,16 @@ object.Constructor('Parser', {
 	scriptPath: null,
 
 
+	// output...
+	// XXX is this the right way to go???
+	print: function(){
+		console.log(...arguments)
+		return this },
+	printError: function(){
+		console.error(...arguments)
+		return this },
+
+
 	// Handler API...
 	//
 	// Format:
@@ -174,6 +185,10 @@ object.Constructor('Parser', {
 	// 		...
 	// 	]
 	//
+	// XXX do we need to output <doc> here???
+	// 		...if it's used only in -help then it would be simpler to 
+	// 		remove it from here and get everything in formDoc(..), same 
+	// 		goes for <arg>...
 	options: function(...prefix){
 		var that = this
 		prefix = prefix.length == 0 ?
@@ -211,6 +226,10 @@ object.Constructor('Parser', {
 			.filter(function([k, a, d, handler]){
 				return !!handler.env 
 					|| 'default' in handler }) },
+	requiredOptions: function(){
+		return this.options()
+			.filter(function([k, a, d, handler]){
+				return handler.required }) },
 	commands: function(){
 		return this.options(this.commandPrefix) },
 	isCommand: function(str){
@@ -246,11 +265,13 @@ object.Constructor('Parser', {
 	// XXX need to test option definitions... (???)
 	// 		i.e. report loops and dead ends...
 
-	// doc stuff...
+	// doc config...
 	helpColumnOffset: 3,
 	helpColumnPrefix: '- ',
 	//helpOptionSeparator: ' | ',
 	helpArgumentSeparator: ', ',
+	//helpValueSeparator: '=',
+	helpValueSeparator: ' ',
 
 	// doc sections...
 	version: undefined,
@@ -288,10 +309,22 @@ object.Constructor('Parser', {
 			var that = this
 			var sep = this.helpArgumentSeparator
 			var expandVars = this.expandTextVars.bind(this)
-			var formDoc = function(doc, env){
-				return [doc, ...(env ? 
-					[`(default value: \$${env})`] 
-					: [])] }
+			var formDoc = function(doc, handler){
+				var info = [
+					...(handler.required ?
+						['Required']
+						: []),
+					...('default' in handler ?
+						[`Default: ${handler.default}`]
+						: []),
+					...(handler.env ?
+						[`Env: \$${handler.env}`]
+						: []),
+				].join(', ')
+				return [doc, 
+					...(info.length > 0 ?
+						['('+ info +')']
+						: [])] }
 			var getValue = function(name){
 				return that[name] ?
 					['', typeof(that[name]) == 'function' ?
@@ -304,7 +337,7 @@ object.Constructor('Parser', {
 					['', title +':', ...items]
 					: [] }
 
-			console.log(
+			this.print(
 				expandVars([
 					`Usage: ${ getValue('usage').join('') }`,
 					// doc (optional)...
@@ -317,7 +350,7 @@ object.Constructor('Parser', {
 								return doc !== false })
 							.map(function([opts, arg, doc, handler]){
 								return [ 
-									opts
+									[opts
 										.sort(function(a, b){ 
 											return a.length - b.length})
 										.map(function(o, i){
@@ -328,9 +361,12 @@ object.Constructor('Parser', {
 													' '.repeat(sep.length + 2) +'-'+ o
 												// add extra '-' to long options...
 												: '-'+ o })
-										.join(sep) 
-											+' '+ (arg || ''), 
-									...formDoc(doc, handler.env) ] })),
+										.join(sep),
+										...(arg ? 
+											[arg] 
+											: [])]
+										.join(that.helpValueSeparator), 
+									...formDoc(doc, handler) ] })),
 					// dynamic options...
 					...section('Dynamic options',
 						this.handleArgument ? 
@@ -341,11 +377,14 @@ object.Constructor('Parser', {
 						this.commands()
 							.map(function([cmd, arg, doc, handler]){
 								return [
-									cmd
+									[cmd
 										.map(function(cmd){ return cmd.slice(1)})
-										.join(sep)
-											+' '+ (arg || ''), 
-									...formDoc(doc, handler.env) ] })),
+										.join(sep),
+										...(arg ? 
+											[arg] 
+											: [])]
+										.join(that.helpValueSeparator), 
+									...formDoc(doc, handler) ] })),
 					// examples (optional)...
 					...section('Examples',
 						this.examples instanceof Array ?
@@ -372,7 +411,7 @@ object.Constructor('Parser', {
 		doc: 'show $SCRIPTNAME verion and exit',
 		priority: 99,
 		handler: function(){
-			console.log(this.version || '0.0.0')
+			this.print(this.version || '0.0.0')
 			return module.STOP }, },
 
 	// Stop processing arguments and continue into .then(..) handlers...
@@ -382,7 +421,7 @@ object.Constructor('Parser', {
 	// stopping the nested context and letting the parent continue.
 	//
 	// XXX should we be able to force the parent/root to also stop???
-	// XXX do we actually need this???
+	// 		...this can be done by pushing '-' to the rest's head...
 	'-': {
 		doc: 'stop processing arguments after this point',
 		handler: function(){
@@ -425,7 +464,7 @@ object.Constructor('Parser', {
 		// doc handler...
 		if(arguments.length == 1 && arguments[0] == 'doc'){
 			return undefined }
-		console.error('Unknown '+ (key.startsWith('-') ? 'option:' : 'command:'), key)
+		this.printError('Unknown '+ (key.startsWith('-') ? 'option:' : 'command:'), key)
 		return module.ERROR }, 
 
 	// Handle argument value conversion...
@@ -489,6 +528,7 @@ object.Constructor('Parser', {
 	//
 	// NOTE: this (i.e. parser) can be used as a nested command/option 
 	// 		handler...
+	//
 	__call__: function(context, argv, main, root_value){
 		var that = this
 		var nested = false
@@ -522,6 +562,10 @@ object.Constructor('Parser', {
 		var opt_pattern = this.optionInputPattern
 
 		// helpers...
+		var handleError = function(reason, arg, rest){
+			that.error(reason, arg, rest)
+			that.handleErrorExit
+				&& that.handleErrorExit(arg, reason) }
 		var runHandler = function(handler, arg, rest){
 			var [arg, value] = arg.split(/=/)
 			// get option value...
@@ -549,13 +593,12 @@ object.Constructor('Parser', {
 						[value] 
 						: []))
 			// handle .STOP / .ERROR
-			if(res === module.STOP || res === module.ERROR){
-				that[res === module.STOP ? 
-					'stop' 
-					: 'error'](arg, rest)
-				res === module.ERROR
-					&& that.handleErrorExit
-					&& that.handleErrorExit(arg) }
+			res === module.STOP
+				&& that.stop(arg, rest)
+			// XXX might be a good idea to use exceptions for this...
+			res === module.ERROR
+				// XXX is this the correct reason???
+				&& handleError('unknown', arg, rest)
 			return res }
 		// NOTE: if successful this needs to modify the arg, thus it 
 		// 		returns both the new first arg and the handler...
@@ -579,6 +622,7 @@ object.Constructor('Parser', {
 				&& [a, handler] }
 
 		var values = new Set()
+		var seen = new Set()
 		var unhandled = []
 		while(rest.length > 0){
 			var arg = rest.shift()
@@ -607,6 +651,7 @@ object.Constructor('Parser', {
 				;(handler.env 
 						|| 'default' in handler)
 					&& values.add(handler)
+				seen.add(handler)
 
 				var res = runHandler(handler, arg, rest)
 
@@ -623,13 +668,29 @@ object.Constructor('Parser', {
 			// unhandled...
 			arg 
 				&& unhandled.push(arg) }
-		// call value handlers that were not explicitly called yet...
-		typeof(process) != 'unhandled'
-			&& this.optionsWithValue()
-				.forEach(function([k, a, d, handler]){
-					values.has(handler)	
-						|| ((handler.env in process.env || handler.default)
-							&& runHandler(handler, a || k[0], null, rest)) })
+		// call value handlers with .env or .default values that were 
+		// not explicitly called yet...
+		this.optionsWithValue()
+			.forEach(function([k, a, d, handler]){
+				values.has(handler)	
+					|| (((typeof(process) != 'undefined' 
+								&& handler.env in process.env) 
+							|| handler.default)
+						&& seen.add(handler)
+						&& runHandler(handler, a || k[0], null, rest)) })
+
+		// check required options...
+		var missing = this
+			.requiredOptions()
+				.filter(function([k, a, d, h]){
+					return !seen.has(h) })
+				.map(function([k, a, d, h]){
+					return k.pop() })
+		if(missing.length > 0){
+			handleError('required', missing, rest)
+			this.printError('Required but missing:', missing.join(', '))
+			return this }
+
 		// post handlers...
 		root_value = root_value && this.handleArgumentValue ?
 			this.handleArgumentValue(this, root_value)

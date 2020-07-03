@@ -40,8 +40,15 @@ argv.Parser({
 			},
 		},
 
+		'-r': '-required',
+		'-required': {
+			doc: 'Required option',
+			required: true,
+		},
+
 		'-test': argv.Parser({
 			env: 'TEST',
+			arg: 'TEST',
 			default: 'moo',
 		}).then(function(){
 			console.log('TEST', ...arguments) }),
