@@ -157,6 +157,7 @@ var afterCallback = function(name){
 // NOTE: essentially this parser is a very basic stack language...
 // 		XXX can we implement the whole thing directly as a stack language???
 //
+// XXX might be a good idea to read metadata from package.json
 // XXX might be a good idea to add a default .handler -- if a user does 
 // 		not define a .handler just set a value... the question is on what?
 // XXX might also be a good idea to return clone rather than this... i.e.
@@ -304,6 +305,9 @@ object.Constructor('Parser', {
 	helpValueSeparator: ' ',
 
 	// doc sections...
+	// XXX might be a good idea to read these from package.json by default...
+	// XXX
+	author: undefined,
 	license: undefined,
 	usage: '$SCRIPTNAME [OPTIONS]',
 	doc: undefined,
@@ -325,6 +329,7 @@ object.Constructor('Parser', {
 			: [a] },
 	expandTextVars: function(text){
 		return text
+			.replace(/\$AUTHOR/g, this.author || 'Author')
 			.replace(/\$LICENSE/g, this.license || '')
 			.replace(/\$VERSION/g, this.version || '0.0.0')
 			.replace(/\$SCRIPTNAME/g, this.scriptName) },
@@ -471,6 +476,19 @@ object.Constructor('Parser', {
 	//'-verbose': '-v',
 
 
+	// Default handler action...
+	//
+	// This is called when .handler is not set...
+	handlerDefault: function(handler, rest, key, value){
+		key = handler.key
+			|| handler.arg
+			// get the final key...
+			|| this.handler(key)[0].slice(1)
+		this[key] = value === undefined ?
+			true
+			: value
+		return this },
+
 
 	// Handle arguments with no explicit handlers found...
 	//
@@ -502,19 +520,6 @@ object.Constructor('Parser', {
 			return undefined }
 		this.printError('Unknown '+ (key.startsWith('-') ? 'option:' : 'command:'), key)
 		return module.ERROR }, 
-
-	// Default handler action...
-	//
-	// This is called when .handler is not set...
-	handlerDefault: function(handler, rest, key, value){
-		key = handler.key
-			|| handler.arg
-			// get the final key...
-			|| this.handler(key)[0].slice(1)
-		this[key] = value === undefined ?
-			true
-			: value
-		return this },
 
 	// Handle argument value conversion...
 	//
@@ -553,7 +558,7 @@ object.Constructor('Parser', {
 	// 	.then(callback(unhandleed, root_value, rest))
 	//
 	// 	.stop(callback(arg, rest))
-	// 	.error(callback(arg, rest))
+	// 	.error(callback(reason, arg, rest))
 	//
 	then: afterCallback('parsing'),
 	stop: afterCallback('stop'),
@@ -568,6 +573,9 @@ object.Constructor('Parser', {
 		return this },
 
 
+	//
+	//	parser()
+	//		-> result
 	//
 	//	parser(argv)
 	//		-> result

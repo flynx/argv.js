@@ -40,6 +40,46 @@ This code is an evolution of that parser.
 
 <!-- XXX ### Alternatives -->
 
+## Contents
+- [argv.js](#argvjs)
+	- [Motivation](#motivation)
+	- [Features](#features)
+	- [Contents](#contents)
+	- [Installation](#installation)
+	- [Basic usage](#basic-usage)
+	- [Configuration](#configuration)
+		- [Options, commands and aliases](#options-commands-and-aliases)
+		- [Help](#help)
+			- [Value placeholders](#value-placeholders)
+			- [Automatically defined values](#automatically-defined-values)
+			- [`.doc`](#doc)
+			- [`.usage`](#usage)
+			- [`.version`](#version)
+			- [`.license`](#license)
+			- [`.examples`](#examples)
+			- [`.footer`](#footer)
+			- [Help formatting](#help-formatting)
+				- [`.helpColumnOffset`](#helpcolumnoffset)
+				- [`.helpColumnPrefix`](#helpcolumnprefix)
+				- [`.helpArgumentSeparator`](#helpargumentseparator)
+				- [`.helpValueSeparator`](#helpvalueseparator)
+		- [Nested parsers](#nested-parsers)
+	- [Components and API](#components-and-api)
+		- [`THEN`, `STOP` and `ERROR`](#then-stop-and-error)
+		- [`Parser(..)`](#parser)
+			- [`.then(..)`](#then)
+			- [`.stop(..)`](#stop)
+			- [`.error(..)`](#error)
+			- [`.off(..)`](#off)
+			- [`<parser>(..)`](#parser-1)
+	- [Advanced parser API](#advanced-parser-api)
+		- [`.print(..)` / `.printError(..)`](#print--printerror)
+		- [`.handlerDefault(..)`](#handlerdefault)
+		- [`.handleArgument(..)`](#handleargument)
+		- [`.handleArgumentValue(..)`](#handleargumentvalue)
+		- [`.handleErrorExit(..)`](#handleerrorexit)
+	- [License](#license-1)
+
 
 ## Installation
 
@@ -84,7 +124,7 @@ var parser = argv.Parser({
 			// default value (optional)
 			default: 123,
 			// required status (optional)
-			required: true,
+			required: false,
 
 			// handler (optional)
 			handler: function(opts, key, value){
@@ -123,9 +163,262 @@ if(__filename == require.main){
 This will create a parser that supports the folowing:
 ```shell
 $ ./script.js --help 
+
+$ ./script.js command
+
+$ ./script.js nested -h
+
+$ ./script.js -fb
+
 ```
 
 ## Configuration
+
+This sections lists attributes and methods designed to be set/modified in
+`<spec>` passed to `Parser(..)`.
+
+Note that these attributes are the same attributes inherited by `<parser>`
+(parser instance) and are simply merged into the new instance created by
+`Parser(..)`, this there are no restrictions on what attributes/methods
+can be overloaded in this way but care must be taken when overloading
+elements that were not designed to be overloaded.
+
+```javascript
+var parser = Parser({
+
+})
+```
+
+### Options, commands and aliases
+
+### Help 
+
+`Parser` defines a default help generator via the `-h` and `-help` options.
+
+By default `-help` will output in the following format:
+```
+<usage>
+
+<doc>
+
+Options:
+		<option-spec> <option-val>		
+							- <option-doc>
+							  (<opt-required>, <opt-default>, <opt-env>)
+		...
+
+Dynamic options:
+		...
+
+Commands:
+		...
+
+Examples:
+		...
+
+<footer>
+```
+All sections are optional and will not be rendered if they contain no data.
+
+
+#### Value placeholders
+
+All documentation strings can contain special placeholders that 
+will get replaced with appropriate values when rendering help.
+
+- `$SCRIPTNAME` replaced with the value of `.scriptName`,
+- `$VERSION` replaced with `.version`,
+- `$LICENSE` replaced with `.license`.
+
+#### Automatically defined values
+
+These values are set by the parser just before parsing starts:
+- `.script` - full script path, usually this is the value of `argv[0]`,
+- `.scriptName` - basename of the script,
+- `.scriptPath` - path of the script.
+
+These will be overwritten when the parser is called.
+
+#### `.doc`
+Script documentation.
+
+    <spec>.doc = <string> | <function>
+
+Default value: `undefined`
+
+#### `.usage`
+Basic usage hint.
+
+    <spec>.usage = <string> | <function> | undefined
+
+Default value: `"$SCRIPTNAME [OPTIONS]"`
+
+#### `.version`
+Version number.
+
+    <spec>.usage = <string> | <function> | undefined
+
+If this is not defined `-version` will print `"0.0.0"`.
+
+Default value: `undefined`
+
+#### `.license`
+Short license information.
+
+    <spec>.usage = <string> | <function> | undefined
+
+Default value: `undefined`
+
+#### `.examples`
+
+    <spec>.usage = <string> | <list> | <function> | undefined
+
+Example list format:
+
+	[
+		[<example-code>, <example-doc>, ...],
+		...
+	]
+
+Default value: `undefined`
+
+#### `.footer`
+Aditional information.
+
+    <spec>.footer = <string> | <function> | undefined
+
+Default value: `undefined`
+
+#### Help formatting
+
+##### `.helpColumnOffset`
+Default value: `3`
+
+##### `.helpColumnPrefix`
+Default value: `"- "`
+
+##### `.helpArgumentSeparator`
+Default value: `", "`
+
+##### `.helpValueSeparator`
+Default value: `" "`
+
+
+### Nested parsers
+
+
+## Components and API
+
+### `THEN`, `STOP` and `ERROR`
+
+Values that if returned by option/command handlers can control the parse flow.
+
+- `THEN` &ndash; Stop parsing and call `.then(..)` callbacks.
+- `STOP` &ndash; Stop parsing and call `.stop(..)` callbacks, 
+  skipping `.then(..)`.
+- `ERROR` &ndash; Stop parsing, call `.error(..)` callbacks and
+  exit with an error.
+
+### `Parser(..)`
+
+Construct a parser instance
+```
+Parser(<spec>)
+	-> <parser>
+```
+
+#### `.then(..)`
+
+Add callback to `then` "event".
+```
+<parser>.then(<callback>)
+	-> <parser>
+```
+
+```
+callback(<unhandled>, <root-value>, <rest>)
+	-> <obj>
+```
+
+`then` is triggered when parsing is done or stopped from an option handler by returning `THEN`.
+
+#### `.stop(..)`
+
+Add callback to `stop` "event".
+```
+<parser>.stop(<callback>)
+	-> <parser>
+```
+
+```
+callback(<arg>, <rest>)
+	-> <obj>
+```
+
+`stop` is triggered when a handler returns `STOP`.
+
+#### `.error(..)`
+
+Add callback to `error` "event".
+```
+<parser>.error(<callback>)
+	-> <parser>
+```
+
+```
+callback(<reason>, <arg>, <rest>)
+	-> <obj>
+```
+
+`error` is triggered when a handler returns `ERROR`.
+
+
+#### `.off(..)`
+
+Remove callback from "event".
+```
+	<parser>.off(<event>, <callback>)
+		-> <parser>
+```
+
+#### `<parser>(..)`
+
+Execute the `parser` insatance.
+
+Run the parser on `process.argv`
+```
+<parser>()
+	-> <result>
+```
+
+Explicitly pass a list of arguments where `<argv>[0]` is treated as 
+the script path.
+```
+<parser>(<argv>)
+	-> <result>
+```
+
+Explicitly pass both a list of args and script path.
+```
+<parser>(<argv>, <main>)
+	-> <result>
+```
+
+If `<main>` is present in `<argv>` all the arguments before it will 
+be ignored, otherwise the whole list is processed as if `<main>` was 
+its head.
+
+## Advanced parser API
+
+### `.print(..)` / `.printError(..)`
+
+### `.handlerDefault(..)`
+
+### `.handleArgument(..)`
+
+### `.handleArgumentValue(..)`
+
+### `.handleErrorExit(..)`
 
 
 ## License
