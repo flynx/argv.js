@@ -127,11 +127,31 @@ var afterCallback = function(name){
 // 	}
 //
 //
+//
+// General runtime architecture:
+//
+// 		Parser(..) -> parser(..) -> result
+//
+//	Parse(..) 
+//		- constructs a parser object (instance)
+//	parse(..) 
+//		- parse is instance of Parse
+//		- contains the parsing configuration / grammar
+//		- parses the argv
+//		- creates/returns a result object
+//	result 
+//		- parse is prototype of result
+//		- contains all the data resulting from the parse
+//
+//
+//
 // It is recommended not to do any processing with side-effects in 
 // option/command handlers directly, prepare for the execution and to 
 // the actual work in the .then(..) callback. The reason being that the 
 // option handlers are called while parsing options and thus may not 
 // yet know of any error or stop conditions triggered later in the argv.
+//
+//
 //
 //
 // NOTE: essentially this parser is a very basic stack language...
@@ -271,6 +291,10 @@ object.Constructor('Parser', {
 	// XXX need to test option definitions... (???)
 	// 		i.e. report loops and dead ends...
 
+	// Builtin options/commands and their configuration...
+	
+	// Help...
+	//
 	// doc config...
 	helpColumnOffset: 3,
 	helpColumnPrefix: '- ',
@@ -280,7 +304,6 @@ object.Constructor('Parser', {
 	helpValueSeparator: ' ',
 
 	// doc sections...
-	version: undefined,
 	license: undefined,
 	usage: '$SCRIPTNAME [OPTIONS]',
 	doc: undefined,
@@ -306,7 +329,6 @@ object.Constructor('Parser', {
 			.replace(/\$VERSION/g, this.version || '0.0.0')
 			.replace(/\$SCRIPTNAME/g, this.scriptName) },
 
-	// Builtin options/commands...
 	'-h': '-help',
 	'-help': {
 		doc: 'print this message and exit',
@@ -412,6 +434,11 @@ object.Constructor('Parser', {
 				.join('\n')))
 			return module.STOP }},
 
+
+	// Version...
+	//
+	version: undefined,
+
 	'-v': '-version',
 	'-version': {
 		doc: 'show $SCRIPTNAME verion and exit',
@@ -419,6 +446,7 @@ object.Constructor('Parser', {
 		handler: function(){
 			this.print(this.version || '0.0.0')
 			return module.STOP }, },
+
 
 	// Stop processing arguments and continue into .then(..) handlers...
 	//
@@ -433,6 +461,7 @@ object.Constructor('Parser', {
 		handler: function(){
 			return module.THEN }, },
 	
+
 	// common short-hands...
 	//
 	// NOTE: defining this as a loop will enable the user to define any 
@@ -440,6 +469,7 @@ object.Constructor('Parser', {
 	// NOTE: unless the loop is broken this set of options is not usable.
 	//'-v': '-verbose',
 	//'-verbose': '-v',
+
 
 
 	// Handle arguments with no explicit handlers found...
@@ -472,6 +502,19 @@ object.Constructor('Parser', {
 			return undefined }
 		this.printError('Unknown '+ (key.startsWith('-') ? 'option:' : 'command:'), key)
 		return module.ERROR }, 
+
+	// Default handler action...
+	//
+	// This is called when .handler is not set...
+	handlerDefault: function(handler, rest, key, value){
+		key = handler.key
+			|| handler.arg
+			// get the final key...
+			|| this.handler(key)[0].slice(1)
+		this[key] = value === undefined ?
+			true
+			: value
+		return this },
 
 	// Handle argument value conversion...
 	//
@@ -527,51 +570,54 @@ object.Constructor('Parser', {
 
 	//
 	//	parser(argv)
-	//		-> parser
+	//		-> result
 	//
 	//	parser(argv, main)
-	//		-> parser
+	//		-> result
 	//
+	// NOTE: the result is an object inherited from parser and containing 
+	// 		all the parse data...
 	// NOTE: this (i.e. parser) can be used as a nested command/option 
 	// 		handler...
 	//
 	__call__: function(context, argv, main, root_value){
-		var that = this
-		var nested = false
-		var rest = this.rest = 
+		var parsed = Object.create(this)
+		var nested = parsed.nested = false
+		var rest = parsed.rest = 
 			argv == null ?
 				(typeof(process) != 'unhandled' ?
 					process.argv 
 					: [])
 				: argv
-		argv = rest.slice() 
+		parsed.argv = rest.slice() 
 		main = main 
 			|| require.main.filename
-
 		// nested command handler...
 		if(context instanceof Parser){
-			nested = true
+			nested = parsed.nested = true
 			main = context.scriptName +' '+ main 
 			rest.unshift(main) }
-
 		// normalize the argv...
 		if(main != null){
-			this.pre_argv = rest.splice(0, rest.indexOf(main))
+			parsed.pre_argv = rest.splice(0, rest.indexOf(main))
 			rest.includes(main)
 				|| rest.unshift(main) }
+		// script stuff...
+		var script = parsed.script = rest.shift()
+		parsed.scriptName = script.split(/[\\\/]/).pop() 
+		parsed.scriptPath = script.slice(0, 
+			script.length - parsed.scriptName.length)
 
-		this.script = rest[0]
-		this.scriptName = rest.shift().split(/[\\\/]/).pop() 
-		this.scriptPath = this.script.slice(0, 
-			this.script.length - this.scriptName.length)
-
-		var opt_pattern = this.optionInputPattern
+		var opt_pattern = parsed.optionInputPattern
 
 		// helpers...
 		var handleError = function(reason, arg, rest){
-			that.error(reason, arg, rest)
-			that.handleErrorExit
-				&& that.handleErrorExit(arg, reason) }
+			parsed.error(reason, arg, rest)
+			parsed.handleErrorExit
+				&& parsed.handleErrorExit(arg, reason) }
+		var defaultHandler = function(handler){
+			return function(rest, arg, value) {
+				return parsed.handlerDefault(handler, rest, arg, value) } }
 		var runHandler = function(handler, arg, rest){
 			var [arg, value] = arg.split(/=/)
 			// get option value...
@@ -585,14 +631,15 @@ object.Constructor('Parser', {
 				: value
 			// value conversion...
 			value = (value != null 
-					&& that.handleArgumentValue) ?
-				that.handleArgumentValue(handler, value)
+					&& parsed.handleArgumentValue) ?
+				parsed.handleArgumentValue(handler, value)
 				: value
 			// run handler...
 			var res = (typeof(handler) == 'function' ?
 					handler
-					: handler.handler)
-				.call(that, 
+					: (handler.handler 
+						|| defaultHandler(handler)))
+				.call(parsed, 
 					rest,
 					arg,
 					...(value != null ? 
@@ -600,7 +647,7 @@ object.Constructor('Parser', {
 						: []))
 			// handle .STOP / .ERROR
 			res === module.STOP
-				&& that.stop(arg, rest)
+				&& parsed.stop(arg, rest)
 			// XXX might be a good idea to use exceptions for this...
 			res === module.ERROR
 				// XXX is this the correct reason???
@@ -612,7 +659,7 @@ object.Constructor('Parser', {
 			var [arg, value] = arg.split(/=/)
 			// skip single letter unknown options or '--' options...
 			if(arg.length <= 2 
-					|| arg.startsWith(that.optionPrefix.repeat(2))){
+					|| arg.startsWith(parsed.optionPrefix.repeat(2))){
 				return undefined }
 			// split and normalize...
 			var [a, ...r] = 
@@ -623,7 +670,7 @@ object.Constructor('Parser', {
 				&& r.push(r.pop() +'='+ value) 
 			// push new options back to option "stack"...
 			rest.splice(0, 0, ...r)
-			var handler = that.handler(a)[1]
+			var handler = parsed.handler(a)[1]
 			return handler 
 				&& [a, handler] }
 
@@ -634,21 +681,20 @@ object.Constructor('Parser', {
 			var arg = rest.shift()
 			var type = opt_pattern.test(arg) ?
 					'opt'
-				: this.isCommand(arg) ?
+				: parsed.isCommand(arg) ?
 					'cmd'
 				: 'unhandled'
 			// options / commands...
 			if(type != 'unhandled'){
 				// get handler...
-				// XXX revise -- arg replacement feels clunky...
-				var handler = this.handler(arg)[1]
+				var handler = parsed.handler(arg)[1]
 					// handle merged options
 					// NOTE: if successful returns array...
 					|| (type == 'opt' 
-						&& this.splitOptions
+						&& parsed.splitOptions
 						&& splitArgs(arg, rest))
 					// dynamic or error...
-					|| this.handleArgument
+					|| parsed.handleArgument
 				// normalize output of splitArgs(..)
 				;[arg, handler] = handler instanceof Array ?
 					handler
@@ -665,8 +711,8 @@ object.Constructor('Parser', {
 				if(res === module.STOP || res === module.ERROR){
 					return nested ?
 						res
-						: this }
-				// break processing -> .then(...)
+						: parsed }
+				// finish arg processing now...
 				if(res === module.THEN){
 					arg = null
 					break }
@@ -676,17 +722,17 @@ object.Constructor('Parser', {
 				&& unhandled.push(arg) }
 		// call value handlers with .env or .default values that were 
 		// not explicitly called yet...
-		this.optionsWithValue()
+		parsed.optionsWithValue()
 			.forEach(function([k, a, d, handler]){
 				values.has(handler)	
 					|| (((typeof(process) != 'undefined' 
 								&& handler.env in process.env) 
 							|| handler.default)
 						&& seen.add(handler)
-						&& runHandler(handler, a || k[0], null, rest)) })
+						&& runHandler(handler, a || k[0], rest)) })
 
 		// check required options...
-		var missing = this
+		var missing = parsed
 			.requiredOptions()
 				.filter(function([k, a, d, h]){
 					return !seen.has(h) })
@@ -694,14 +740,18 @@ object.Constructor('Parser', {
 					return k.pop() })
 		if(missing.length > 0){
 			handleError('required', missing, rest)
-			this.printError('Required but missing:', missing.join(', '))
-			return this }
+			parsed.printError('Required but missing:', missing.join(', '))
+			return parsed }
 
 		// post handlers...
-		root_value = root_value && this.handleArgumentValue ?
-			this.handleArgumentValue(this, root_value)
+		root_value = root_value && parsed.handleArgumentValue ?
+			parsed.handleArgumentValue(parsed, root_value)
 			: root_value
-		return this.then(unhandled, root_value, rest) },
+		parsed.then(unhandled, root_value, rest) 
+		// XXX should we detach parsed from this???
+		// 		i.e. set: 
+		// 			parsed.__proto__ = {}.__proto__
+		return parsed },
 
 	// NOTE: see general doc...
 	__init__: function(spec){

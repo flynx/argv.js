@@ -105,7 +105,7 @@ p(['test', '-h'])
 
 typeof(__filename) != 'undefined'
 	&& __filename == (require.main || {}).filename
-	&& p()
+	&& console.log(p())
 
 
 
