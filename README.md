@@ -202,19 +202,19 @@ By default `-help` will output in the following format:
 <doc>
 
 Options:
-		<option-spec> <option-val>		
-							- <option-doc>
-							  (<opt-required>, <opt-default>, <opt-env>)
-		...
+	<option-spec> <option-val>		
+				- <option-doc>
+				  (<opt-required>, <opt-default>, <opt-env>)
+	...
 
 Dynamic options:
-		...
+	...
 
 Commands:
-		...
+	...
 
 Examples:
-		...
+	...
 
 <footer>
 ```
