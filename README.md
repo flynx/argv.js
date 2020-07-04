@@ -63,7 +63,53 @@ Now for the code
 var argv = require('ig-argv')
 
 var parser = argv.Parser({
-		// XXX
+		// basic/quick option...
+		'-b': '-basic',
+		'-basic': function(){
+			// ...
+		},
+
+		// full option settings...
+		'-f': '-full',
+		'-full': {
+			doc: 'Option help',
+			// option value to be displayed in help (optional)
+			arg: 'VALUE',
+
+			// value key (optional)
+			// NOTE: if .handler(..) is defined this is ignored.
+			key: 'fullValue',
+			// envioroment value (optional)
+			env: 'VALUE',
+			// default value (optional)
+			default: 123,
+			// required status (optional)
+			required: true,
+
+			// handler (optional)
+			handler: function(opts, key, value){
+				// ...
+			},
+		},
+
+		// command...
+		// NOTE: the only difference between an option and a command is
+		//		the prefix ('-' vs. '@') that determines how it is parsed,
+		//		otherwise they are identical and can alias each other...
+		'@cmd', '@command',
+		'@command': {
+			// ...
+		},
+
+		// example command-option alias...
+		'@help': '-help',
+
+		// nested parser...
+		'@nested': argv.Parser({
+			// ...
+		}).then(function(){
+			// ...
+		}),
 	})
 	.then(function(){
 		// XXX
@@ -78,6 +124,8 @@ This will create a parser that supports the folowing:
 ```shell
 $ ./script.js --help 
 ```
+
+## Configuration
 
 
 ## License
