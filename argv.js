@@ -84,7 +84,7 @@ var afterCallback = function(name){
 //		'-test': {
 //			doc: 'test option',
 //
-//			arg: 'VALUE',
+//			arg: 'VALUE|key',
 //
 //			env: 'VALUE',
 //
