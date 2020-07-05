@@ -158,8 +158,8 @@ var afterCallback = function(name){
 // 		XXX can we implement the whole thing directly as a stack language???
 //
 // XXX might be a good idea to read metadata from package.json
-// XXX might be a good idea to add a default .handler -- if a user does 
-// 		not define a .handler just set a value... the question is on what?
+// XXX unify handler.arg and handler.key...
+// 		...syntax: "<arg>" | "<arg>|<key>"
 // XXX might also be a good idea to return clone rather than this... i.e.
 // 		treat the parser object as a result factory...
 // 		...this would resolve any issues with misxing parse state with 
