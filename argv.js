@@ -159,8 +159,6 @@ var afterCallback = function(name){
 //
 //
 //
-// XXX unify handler.arg and handler.key...
-// 		...syntax: "<arg>" | "<arg>|<key>"
 // XXX add -about flag???
 // XXX we should be able to set .scriptName by hand...
 // XXX might be a good idea to read metadata from package.json
@@ -195,6 +193,7 @@ object.Constructor('Parser', {
 
 
 	// output...
+	//
 	// XXX is this the right way to go???
 	print: function(...args){
 		console.log(...args)
@@ -236,8 +235,8 @@ object.Constructor('Parser', {
 									[opt], 
 									h.arg 
 										&& h.arg
-											.split(/|/)
-											.pop()
+											.split(/\|/)
+											.shift()
 											.trim(), 
 									h.doc || k.slice(1), 
 									h ])) })
@@ -297,8 +296,6 @@ object.Constructor('Parser', {
 				[]
 				: ['dead-end'])] },
 
-	// XXX need to test option definitions... (???)
-	// 		i.e. report loops and dead ends...
 
 	// Builtin options/commands and their configuration...
 	
@@ -322,7 +319,7 @@ object.Constructor('Parser', {
 	// XXX test this with string value...
 	examples: undefined,
 	// XXX add license and version info...
-	//footer: '$SCRIPTNAME v:$VERSION',
+	//footer: '$SCRIPTNAME ($VERSION) by $AUTHOR',
 	footer: undefined,
 
 	// XXX should wrap long lines...
@@ -475,28 +472,23 @@ object.Constructor('Parser', {
 			return module.THEN }, },
 	
 
-	// common short-hands...
-	//
-	// NOTE: defining this as a loop will enable the user to define any 
-	// 		of the aliases as the handler and thus breaking the loop...
-	// NOTE: unless the loop is broken this set of options is not usable.
-	//'-v': '-verbose',
-	//'-verbose': '-v',
-
-
 	// Default handler action...
 	//
 	// This is called when .handler is not set...
+	//
 	handlerDefault: function(handler, rest, key, value){
 		key = (handler.arg
 				&& handler.arg
-					.split(/|/)
+					.split(/\|/)
 					.pop()
 					.trim())
 			// get the final key...
 			|| this.handler(key)[0].slice(1)
-		this[key] = value === undefined ?
-			true
+		this[key] = 
+			arguments.length < 4 ?
+				true
+			: value === undefined ?
+				handler.default || true 
 			: value
 		return this },
 
@@ -598,7 +590,6 @@ object.Constructor('Parser', {
 	// 		all the parse data...
 	// NOTE: this (i.e. parser) can be used as a nested command/option 
 	// 		handler...
-	//
 	__call__: function(context, argv, main, root_value){
 		var parsed = Object.create(this)
 		var nested = parsed.nested = false
@@ -636,9 +627,11 @@ object.Constructor('Parser', {
 				&& parsed.handleErrorExit(arg, reason) }
 		var defaultHandler = function(handler){
 			return function(rest, arg, value) {
-				return parsed.handlerDefault(handler, rest, arg, value) } }
+				return parsed.handlerDefault(handler, ...arguments) } }
 		var runHandler = function(handler, arg, rest){
-			var [arg, value] = arg.split(/=/)
+			var [arg, value] = arg instanceof Array ?
+				arg
+				: arg.split(/=/)
 			// get option value...
 			value = value == null ?
 				((handler.arg && !opt_pattern.test(rest[0])) ?
@@ -693,6 +686,7 @@ object.Constructor('Parser', {
 			return handler 
 				&& [a, handler] }
 
+		// parse the arguments and call handlers...
 		var values = new Set()
 		var seen = new Set()
 		var unhandled = []
@@ -748,7 +742,9 @@ object.Constructor('Parser', {
 								&& handler.env in process.env) 
 							|| handler.default)
 						&& seen.add(handler)
-						&& runHandler(handler, a || k[0], rest)) })
+						&& runHandler(handler, 
+							[k[0], handler.default], 
+							rest)) })
 
 		// check required options...
 		var missing = parsed
@@ -767,9 +763,6 @@ object.Constructor('Parser', {
 			parsed.handleArgumentValue(parsed, root_value)
 			: root_value
 		parsed.then(unhandled, root_value, rest) 
-		// XXX should we detach parsed from this???
-		// 		i.e. set: 
-		// 			parsed.__proto__ = {}.__proto__
 		return parsed },
 
 	// NOTE: see general doc...

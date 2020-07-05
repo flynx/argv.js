@@ -46,6 +46,12 @@ argv.Parser({
 			required: true,
 		},
 
+		'-value': {
+			doc: 'Value option',
+			arg: 'VALUE | valueValue',
+			default: 333,
+		},
+
 		'-test': argv.Parser({
 			env: 'TEST',
 			arg: 'TEST',

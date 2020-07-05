@@ -31,7 +31,6 @@ This code is an evolution of that parser.
   - `-help` &ndash; generate and print help,
   - `-version` &ndash; print version,
   - `-` &ndash; stop argument processing,
-  - common option aliases
 - Extensible:
   - Hooks for option value conversion _(XXX should this be implemented???)_
   - Hooks for dynamic option/command handling
@@ -114,11 +113,10 @@ var parser = argv.Parser({
 		'-full': {
 			doc: 'Option help',
 			// option value to be displayed in help (optional)
-			arg: 'VALUE',
+			// NOTE: "attr" is used as a key to set the value if .handler
+			//		was not defined and is ingored in all other cases...
+			arg: 'VALUE | attr',
 
-			// value key (optional)
-			// NOTE: if .handler(..) is defined this is ignored.
-			key: 'fullValue',
 			// envioroment value (optional)
 			env: 'VALUE',
 			// default value (optional)
