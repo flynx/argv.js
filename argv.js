@@ -159,11 +159,11 @@ var afterCallback = function(name){
 //
 //
 //
-//
-// XXX we should be able to set .scriptName by hand...
-// XXX might be a good idea to read metadata from package.json
 // XXX unify handler.arg and handler.key...
 // 		...syntax: "<arg>" | "<arg>|<key>"
+// XXX add -about flag???
+// XXX we should be able to set .scriptName by hand...
+// XXX might be a good idea to read metadata from package.json
 // XXX handle option types???
 // XXX --help should work for any command and not just for the nested 
 // 		parser commands... (???)
@@ -232,7 +232,15 @@ object.Constructor('Parser', {
 						h !== undefined
 							&& (handlers[k] ?
 								handlers[k][0].push(opt)
-								: (handlers[k] = [ [opt], h.arg, h.doc || k.slice(1), h ])) })
+								: (handlers[k] = [
+									[opt], 
+									h.arg 
+										&& h.arg
+											.split(/|/)
+											.pop()
+											.trim(), 
+									h.doc || k.slice(1), 
+									h ])) })
 				return Object.values(handlers) })
 			.flat(1) 
 			.map(function(e, i){ return [e, i] })
@@ -480,8 +488,11 @@ object.Constructor('Parser', {
 	//
 	// This is called when .handler is not set...
 	handlerDefault: function(handler, rest, key, value){
-		key = handler.key
-			|| handler.arg
+		key = (handler.arg
+				&& handler.arg
+					.split(/|/)
+					.pop()
+					.trim())
 			// get the final key...
 			|| this.handler(key)[0].slice(1)
 		this[key] = value === undefined ?
