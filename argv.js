@@ -157,13 +157,13 @@ var afterCallback = function(name){
 // NOTE: essentially this parser is a very basic stack language...
 // 		XXX can we implement the whole thing directly as a stack language???
 //
+//
+//
+//
+//
 // XXX might be a good idea to read metadata from package.json
 // XXX unify handler.arg and handler.key...
 // 		...syntax: "<arg>" | "<arg>|<key>"
-// XXX might also be a good idea to return clone rather than this... i.e.
-// 		treat the parser object as a result factory...
-// 		...this would resolve any issues with misxing parse state with 
-// 		grammer... etc.
 // XXX handle option types???
 // XXX --help should work for any command and not just for the nested 
 // 		parser commands... (???)
