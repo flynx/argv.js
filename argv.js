@@ -160,7 +160,7 @@ var afterCallback = function(name){
 //
 //
 //
-//
+// XXX we should be able to set .scriptName by hand...
 // XXX might be a good idea to read metadata from package.json
 // XXX unify handler.arg and handler.key...
 // 		...syntax: "<arg>" | "<arg>|<key>"
