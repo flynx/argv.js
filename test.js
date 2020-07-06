@@ -52,12 +52,19 @@ argv.Parser({
 			default: 333,
 		},
 
+		// XXX need to handle value correctly...
 		'-test': argv.Parser({
 			env: 'TEST',
 			arg: 'TEST',
 			default: 'moo',
 		}).then(function(){
 			console.log('TEST', ...arguments) }),
+
+		'-int': {
+			arg: 'INT|int',
+			type: 'int',
+			valueRequired: true,
+		},
 
 		'@nested': argv.Parser({
 			doc: 'nested parser.',
@@ -68,6 +75,10 @@ argv.Parser({
 				console.log('NESTED NESTED DONE', ...arguments)}),
 		}).then(function(){
 			console.log('NESTED DONE', ...arguments) }),
+
+		'-\\*': {
+			handler: function(){
+				console.log('-\\*:', ...arguments) } },
 
 		// these aliases will not get shown...
 
