@@ -160,7 +160,6 @@ var afterCallback = function(name){
 // NOTE: essentially this parser is a very basic stack language...
 // 		XXX can we implement the whole thing directly as a stack language???
 //
-// XXX need to handle values (and return values) of nested parsers correctly...
 // XXX can we add more prefexes, like '+' and the like???
 // XXX might be a good idea to read metadata from package.json
 // XXX should -help should work for any command?
@@ -191,8 +190,9 @@ object.Constructor('Parser', {
 
 	// instance stuff...
 	argv: null,
-	pre_argv: null,
+	preArgv: null,
 	rest: null,
+	rootValue: null,
 
 	scriptNmae: null,
 	scriptPath: null,
@@ -607,7 +607,7 @@ object.Constructor('Parser', {
 			rest.unshift(main) }
 		// normalize the argv...
 		if(main != null){
-			parsed.pre_argv = rest.splice(0, rest.indexOf(main))
+			parsed.preArgv = rest.splice(0, rest.indexOf(main))
 			rest.includes(main)
 				|| rest.unshift(main) }
 		// script stuff...
@@ -643,7 +643,7 @@ object.Constructor('Parser', {
 					&& parsed.handleArgumentValue) ?
 				parsed.handleArgumentValue(handler, value)
 				: value
-			// required value ...
+			// required value check...
 			if(handler.valueRequired && value == null){
 				handleError('value missing', arg, rest)
 				parsed.printError('value missing:', arg+'=?')
@@ -658,6 +658,11 @@ object.Constructor('Parser', {
 					...(value != null ? 
 						[value] 
 						: []))
+
+			// add nested parser result parsed...
+			// XXX should this be done also for .STOP / .ERROR / ... ???
+			handler instanceof Parser
+				&& parsed.handlerDefault(handler, rest, arg, res)
 
 			res === module.STOP
 				&& parsed.stop(arg, rest)
@@ -766,9 +771,12 @@ object.Constructor('Parser', {
 			return parsed }
 
 		// handle root value...
-		root_value = (root_value && parsed.handleArgumentValue) ?
-			parsed.handleArgumentValue(parsed, root_value)
-			: root_value
+		root_value = 
+			(root_value && parsed.handleArgumentValue) ?
+				parsed.handleArgumentValue(parsed, root_value)
+				: root_value
+		root_value
+			&& (parsed.rootValue = root_value)
 
 		parsed.then(unhandled, root_value, rest) 
 		return parsed },
