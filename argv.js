@@ -157,8 +157,6 @@ var afterCallback = function(name){
 // NOTE: essentially this parser is a very basic stack language...
 // 		XXX can we implement the whole thing directly as a stack language???
 //
-// XXX should the undefined flags/comands be handled by '-*' and '@*' handlers?
-// 		...we would need a way to quote '*' to use it as an arg explicitly...
 // XXX add -about flag???
 // XXX we should be able to set .scriptName by hand...
 // XXX might be a good idea to read metadata from package.json
@@ -194,7 +192,8 @@ object.Constructor('Parser', {
 
 	// output...
 	//
-	// XXX is this the right way to go???
+	// XXX how do we return something from these??? 
+	// 		...closure?? ...globals?
 	print: function(...args){
 		console.log(...args)
 		return this },
@@ -238,7 +237,9 @@ object.Constructor('Parser', {
 											.split(/\|/)
 											.shift()
 											.trim(), 
-									h.doc || k.slice(1), 
+									h.doc == null ?
+										k.slice(1)
+										: h.doc, 
 									h ])) })
 				return Object.values(handlers) })
 			.flat(1) 
@@ -268,7 +269,8 @@ object.Constructor('Parser', {
 		return this.options(this.commandPrefix) },
 	isCommand: function(str){
 		return this.commandInputPattern.test(str) 
-			&& (this.commandPrefix + str) in this },
+			&& ((this.commandPrefix + str) in this 
+				|| this['@*']) },
 	// NOTE: this ignores any arguments values present in the key...
 	// NOTE: this ignores options forming alias loops and dead-end 
 	// 		options...
@@ -288,7 +290,6 @@ object.Constructor('Parser', {
 				return [key, undefined,
 					// report loop...
 					'loop', [...seen, key]] }
-				//throw new Error('Option loop detected: '+ ([...seen, key].join(' -> '))) }
 			seen.add(key) }
 		return [key, this[key],
 			// report dead-end if this[key] is undefined...
@@ -363,11 +364,17 @@ object.Constructor('Parser', {
 					...(info.length > 0 ?
 						['('+ info +')']
 						: [])] }
-			var getValue = function(name){
-				return that[name] ?
-					['', typeof(that[name]) == 'function' ?
-						that[name]()
-						: that[name]]
+			var getValue = function(src, name){
+				name = arguments.length == 1 ?
+					src
+					: name
+				src = arguments.length == 1 ? 
+					that 
+					: src
+				return src[name] ?
+					['', typeof(src[name]) == 'function' ?
+						src[name]()
+						: src[name]]
 		   			: [] }
 			var section = function(title, items){
 				items = items instanceof Array ? items : [items]
@@ -387,6 +394,8 @@ object.Constructor('Parser', {
 							.filter(function([o, a, doc]){
 								return doc !== false })
 							.map(function([opts, arg, doc, handler]){
+								opts = handler.key || opts
+								opts = opts instanceof Array ? opts : [opts]
 								return [ 
 									[opts
 										.sort(function(a, b){ 
@@ -407,12 +416,14 @@ object.Constructor('Parser', {
 									...formDoc(doc, handler) ] })),
 					// dynamic options...
 					...section('Dynamic options',
-						this.handleArgument ? 
-							this.handleArgument('doc') || [] 
+						(this['-*'] && this['-*'].section_doc) ? 
+							getValue(this['-*'], 'section_doc') || [] 
 							: []),
 					// commands (optional)...
 					...section('Commands',
 						this.commands()
+							.filter(function([o, a, doc]){
+								return doc !== false })
 							.map(function([cmd, arg, doc, handler]){
 								return [
 									[cmd
@@ -423,6 +434,11 @@ object.Constructor('Parser', {
 											: [])]
 										.join(that.helpValueSeparator), 
 									...formDoc(doc, handler) ] })),
+					// dynamic commands...
+					...section('Dynamic commands',
+						(this['@*'] && this['@*'].section_doc) ? 
+							getValue(this['@*'], 'section_doc') || [] 
+							: []),
 					// examples (optional)...
 					...section('Examples',
 						this.examples instanceof Array ?
@@ -470,6 +486,27 @@ object.Constructor('Parser', {
 		doc: 'stop processing arguments after this point',
 		handler: function(){
 			return module.THEN }, },
+
+
+	// Dynamic handlers...
+	//
+	// These can be presented in help in two sections:
+	// 	Options / Commands
+	// 		.doc is a string
+	// 		.key can be used to override the option text
+	//
+	// 	Dynamic options / Dynamic commands
+	// 		.section_doc is a string or array
+	//
+	// XXX need a way to quote '*' to make it usable in flags/commands...
+	'-*': {
+		//key: '-*',
+		doc: false,
+		//section_doc: ...,
+		handler: function(_, key){
+			this.printError('Unknown '+ (key.startsWith('-') ? 'option:' : 'command:'), key)
+			return module.ERROR } },
+	'@*': '-*',
 	
 
 	// Default handler action...
@@ -492,37 +529,6 @@ object.Constructor('Parser', {
 			: value
 		return this },
 
-
-	// Handle arguments with no explicit handlers found...
-	//
-	// 	Handle dynamic/unknown argument...
-	// 	.handleArgument(args, arg)
-	// 		-> module.ERROR
-	// 		-> module.STOP
-	// 		-> module.THEN
-	// 		-> result
-	//
-	// 	Get dynamic argument doc...
-	// 	.handleArgument('doc')
-	// 		-> undefined
-	// 		-> doc
-	//
-	//
-	// doc format:
-	// 	[
-	// 		[<option-spec>, <doc>],
-	// 		...
-	// 	]
-	//
-	//
-	// NOTE: this is mainly needed to handle dynamic arguments or print 
-	// 		error on unknown options (default)...
-	handleArgument: function(_, key){
-		// doc handler...
-		if(arguments.length == 1 && arguments[0] == 'doc'){
-			return undefined }
-		this.printError('Unknown '+ (key.startsWith('-') ? 'option:' : 'command:'), key)
-		return module.ERROR }, 
 
 	// Handle argument value conversion...
 	//
@@ -707,7 +713,10 @@ object.Constructor('Parser', {
 						&& parsed.splitOptions
 						&& splitArgs(arg, rest))
 					// dynamic or error...
-					|| parsed.handleArgument
+					|| parsed.handler(
+						type == 'opt' ? 
+							'-*' 
+							: '@*')[1]
 				// normalize output of splitArgs(..)
 				;[arg, handler] = handler instanceof Array ?
 					handler
