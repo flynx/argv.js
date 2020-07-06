@@ -157,8 +157,8 @@ var afterCallback = function(name){
 // NOTE: essentially this parser is a very basic stack language...
 // 		XXX can we implement the whole thing directly as a stack language???
 //
-//
-//
+// XXX should the undefined flags/comands be handled by '-*' and '@*' handlers?
+// 		...we would need a way to quote '*' to use it as an arg explicitly...
 // XXX add -about flag???
 // XXX we should be able to set .scriptName by hand...
 // XXX might be a good idea to read metadata from package.json
