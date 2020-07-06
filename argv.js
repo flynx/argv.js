@@ -161,6 +161,7 @@ var afterCallback = function(name){
 // 		XXX can we implement the whole thing directly as a stack language???
 //
 // XXX can we add more prefexes, like '+' and the like???
+// 		...add prefix handlers???
 // XXX might be a good idea to read metadata from package.json
 // XXX should -help should work for any command?
 // 		...now only works for nested parsers...
@@ -186,11 +187,10 @@ object.Constructor('Parser', {
 	// NOTE: we only care about differentiating an option from a command
 	// 		here by design...
 	optionInputPattern: /^--?(.*)$/,
-	commandInputPattern: /^([a-zA-Z].*)$/,
+	commandInputPattern: /^([a-zA-Z*].*)$/,
 
 	// instance stuff...
 	argv: null,
-	preArgv: null,
 	rest: null,
 	rootValue: null,
 
@@ -284,8 +284,6 @@ object.Constructor('Parser', {
 		key = this.optionInputPattern.test(key) ?
 			key.replace(this.optionInputPattern, this.optionPrefix+'$1')
 			: key.replace(this.commandInputPattern, this.commandPrefix+'$1')
-		// quote '*'...
-		key = key.replace(/^(.)\*$/, '$1\\*')
 		var seen = new Set()
 		while(key in this 
 				&& typeof(this[key]) == typeof('str')){
@@ -520,9 +518,11 @@ object.Constructor('Parser', {
 					.trim())
 			// get the final key...
 			|| this.handler(key)[0].slice(1)
-		// if value not given set true...
+		// if value not given set true and handle...
 		this[key] = arguments.length < 4 ?
-			this.handleArgumentValue(handler, true)
+			(this.handleArgumentValue ?
+				this.handleArgumentValue(handler, true)
+				: true)
 			: value
 		return this },
 
@@ -607,7 +607,7 @@ object.Constructor('Parser', {
 			rest.unshift(main) }
 		// normalize the argv...
 		if(main != null){
-			parsed.preArgv = rest.splice(0, rest.indexOf(main))
+			rest.splice(0, rest.indexOf(main))
 			rest.includes(main)
 				|| rest.unshift(main) }
 		// script stuff...
@@ -673,7 +673,7 @@ object.Constructor('Parser', {
 		// 		returns both the new first arg and the handler...
 		var splitArgs = function(arg, rest){
 			var [arg, value] = arg.split(/=/)
-			// skip single letter unknown options or '--' options...
+			// skip single letter unknown or '--' options...
 			if(arg.length <= 2 
 					|| arg.startsWith(parsed.optionPrefix.repeat(2))){
 				return undefined }
@@ -693,7 +693,7 @@ object.Constructor('Parser', {
 		// parse the arguments and call handlers...
 		var values = new Set()
 		var seen = new Set()
-		var unhandled = []
+		var unhandled = parsed.unhandled = []
 		while(rest.length > 0){
 			var arg = rest.shift()
 			// NOTE: opts and commands do not follow the same path here 
@@ -706,6 +706,8 @@ object.Constructor('Parser', {
 				: 'unhandled'
 			// options / commands...
 			if(type != 'unhandled'){
+				// quote '-*' / '@*'...
+				arg = arg.replace(/^(.)\*$/, '$1\\*')
 				// get handler...
 				var handler = parsed.handler(arg)[1]
 					// handle merged options
@@ -714,8 +716,8 @@ object.Constructor('Parser', {
 						&& parsed.splitOptions
 						&& splitArgs(arg, rest))
 					// dynamic or error...
-					|| parsed[type == 'opt' ? '-*' : '@*']
-				// in case no handler found and '-*' / '@*' not defined...
+					|| parsed.handler(type == 'opt' ? '-*' : '@*')[1]
+				// no handler found and '-*' or '@*' not defined...
 				if(handler == null){
 					handleError('unknown', arg, rest)
 					parsed.printError('unknown '+(type == 'opt' ? 'option:' : 'command:'), arg)
@@ -739,12 +741,10 @@ object.Constructor('Parser', {
 						: parsed }
 				// finish arg processing now...
 				if(res === module.THEN){
-					arg = null
 					break }
 				continue }
 			// unhandled...
-			arg 
-				&& unhandled.push(arg) }
+			unhandled.push(arg) }
 		// call value handlers with .env or .default values that were 
 		// not explicitly called yet...
 		parsed.optionsWithValue()

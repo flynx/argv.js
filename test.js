@@ -80,6 +80,8 @@ argv.Parser({
 			handler: function(){
 				console.log('-\\*:', ...arguments) } },
 
+		//'@*': undefined,
+
 		// these aliases will not get shown...
 
 		// dead-end alias...
