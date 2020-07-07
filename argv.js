@@ -699,33 +699,30 @@ object.Constructor('Parser', {
 			// NOTE: opts and commands do not follow the same path here 
 			// 		because options if unidentified need to be split into
 			// 		single letter options and commands to not...
-			var type = opt_pattern.test(arg) ?
-					'opt'
+			var [type, dfl] = opt_pattern.test(arg) ?
+					['opt', parsed.optionPrefix +'*']
 				: parsed.isCommand(arg) ?
-					'cmd'
-				: 'unhandled'
+					['cmd', parsed.commandPrefix +'*']
+				: ['unhandled']
 			// options / commands...
 			if(type != 'unhandled'){
 				// quote '-*' / '@*'...
 				arg = arg.replace(/^(.)\*$/, '$1\\*')
 				// get handler...
 				var handler = parsed.handler(arg)[1]
-					// handle merged options
-					// NOTE: if successful returns array...
+					// handle merged options...
+					// NOTE: we replace arg here...
 					|| (type == 'opt' 
 						&& parsed.splitOptions
-						&& splitArgs(arg, rest))
+						// XXX a tad ugly...
+						&& (([arg, handler] = splitArgs(arg, rest)), handler))
 					// dynamic or error...
-					|| parsed.handler(type == 'opt' ? '-*' : '@*')[1]
+					|| parsed.handler(dfl)[1]
 				// no handler found and '-*' or '@*' not defined...
 				if(handler == null){
 					handleError('unknown', arg, rest)
 					parsed.printError('unknown '+(type == 'opt' ? 'option:' : 'command:'), arg)
 					return module.ERROR }
-				// normalize output of splitArgs(..)
-				;[arg, handler] = handler instanceof Array ?
-					handler
-					: [arg, handler]
 
 				// mark handler...
 				;(handler.env || 'default' in handler)
