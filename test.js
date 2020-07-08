@@ -52,7 +52,6 @@ argv.Parser({
 			default: 333,
 		},
 
-		// XXX need to handle value correctly...
 		'-test': argv.Parser({
 			env: 'TEST',
 			arg: 'TEST',
@@ -60,6 +59,7 @@ argv.Parser({
 		}).then(function(){
 			console.log('TEST', ...arguments) }),
 
+		'-i': '-int',
 		'-int': {
 			arg: 'INT|int',
 			type: 'int',
@@ -93,10 +93,13 @@ argv.Parser({
 		'-x': '-y',
 		'-y': '-x',
 
-		'-a': '-b',
-		'-b': '-c',
-		'-c': '-a',
+		'-k': '-l',
+		'-l': '-m',
+		'-m': '-k',
 	})
+	//.print(function(...args){
+	//	console.log('----\n', ...args)
+	//	return argv.STOP })
 	.then(function(){
 		console.log('DONE', ...arguments) })
 	.stop(function(){

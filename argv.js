@@ -41,21 +41,40 @@ module.ERROR =
 //---------------------------------------------------------------------
 // helpers...
 
-// XXX does this need to be an event???
-// XXX doc...
-var afterCallback = function(name){
+//
+//	afterCallback(name)
+//		-> func
+//
+//	afterCallback(name, pre-action, post-action)
+//		-> func
+//
+//
+//	func(..)
+//		-> this
+//		-> res 
+//
+var afterCallback = function(name, pre, post){
 	var attr = '__after_'+ name
-	return function(func){
+	return function(...args){
 		var that = this
-		var args = [...arguments]
-		;(args.length == 1 && typeof(func) == 'function') ?
-			// add handler...
-			(this[attr] = this[attr] || []).push(func)
-			// call handlers...
-			: (this[attr] || [])
-				.forEach(function(func){
-					func.call(that, ...args) })
-		return this } }
+		// bind...
+		if(args.length == 1 && typeof(args[0]) == 'function'){
+			(this[attr] = this[attr] || []).push(args[0])
+			return this }
+		// pre callback...
+		var call = pre ?
+			(pre.call(this, ...args) !== false)
+			: true
+		return ((call && this[attr] || [])
+				// call handlers...
+				.map(function(func){
+					return func.call(that, ...args) })
+				// stop if module.STOP is returned and return this...
+				.includes(false) && this)
+			// post callback...
+			|| (post ?
+				post.call(this, ...args)
+				: this) } }
 
 
 
@@ -160,11 +179,11 @@ var afterCallback = function(name){
 // NOTE: essentially this parser is a very basic stack language...
 // 		XXX can we implement the whole thing directly as a stack language???
 //
-// XXX can we add more prefexes, like '+' and the like???
+// XXX can we add more prefixes, like '+' and the like???
 // 		...add prefix handlers???
-// XXX might be a good idea to read metadata from package.json
 // XXX should -help should work for any command?
 // 		...now only works for nested parsers...
+// XXX might be a good idea to read metadata from package.json
 // XXX should we handle <scriptName>-<command> script calls???
 // XXX might be a good idea to use exceptions for ERROR...
 var Parser =
@@ -189,23 +208,27 @@ object.Constructor('Parser', {
 	optionInputPattern: /^--?(.*)$/,
 	commandInputPattern: /^([a-zA-Z*].*)$/,
 
-	// instance stuff...
-	argv: null,
-	rest: null,
-	rootValue: null,
 
+	// instance stuff...
+	// XXX dp we need all three???
+	script: null,
 	scriptNmae: null,
 	scriptPath: null,
+
+	argv: null,
+	rest: null,
+	unhandled: null,
+	rootValue: null,
 
 
 	// output...
 	//
-	print: function(...args){
+	print: afterCallback('print', null, function(...args){
 		console.log(...args)
-		return this },
-	printError: function(...args){
+		return this }),
+	printError: afterCallback('print_error', null, function(...args){
 		console.error(this.scriptName+': Error:', ...args)
-		return this },
+		return this }),
 
 
 	// Handler API...
@@ -357,7 +380,7 @@ object.Constructor('Parser', {
 						[`Env: \$${handler.env}`]
 						: []),
 				].join(', ')
-				return [doc, 
+				return [doc.replace(/\\\*/g, '*'),
 					...(info.length > 0 ?
 						['('+ info +')']
 						: [])] }
@@ -395,8 +418,12 @@ object.Constructor('Parser', {
 								opts = opts instanceof Array ? opts : [opts]
 								return [ 
 									[opts
+										// unquote...
+										.map(function(o){
+											return o.replace(/\\\*/g, '*') })
 										.sort(function(a, b){ 
 											return a.length - b.length})
+										// form: "-x, --xx"
 										.map(function(o, i){
 											return o.length <= 2 ? 
 													o 
@@ -498,7 +525,6 @@ object.Constructor('Parser', {
 	// NOTE: to explicitly handle '-*' option or '*' command define handlers
 	// 		for them under '-\\*' and '@\\*' respectively.
 	'-*': {
-		//key: '-*',
 		doc: false,
 		//section_doc: ...,
 		handler: function(_, key){
@@ -676,7 +702,7 @@ object.Constructor('Parser', {
 			// skip single letter unknown or '--' options...
 			if(arg.length <= 2 
 					|| arg.startsWith(parsed.optionPrefix.repeat(2))){
-				return undefined }
+				return [arg, undefined] }
 			// split and normalize...
 			var [a, ...r] = 
 				[...arg.slice(1)]
@@ -687,8 +713,7 @@ object.Constructor('Parser', {
 			// push new options back to option "stack"...
 			rest.splice(0, 0, ...r)
 			var handler = parsed.handler(a)[1]
-			return handler 
-				&& [a, handler] }
+			return [a, handler] }
 
 		// parse the arguments and call handlers...
 		var values = new Set()
@@ -711,11 +736,10 @@ object.Constructor('Parser', {
 				// get handler...
 				var handler = parsed.handler(arg)[1]
 					// handle merged options...
-					// NOTE: we replace arg here...
 					|| (type == 'opt' 
 						&& parsed.splitOptions
-						// XXX a tad ugly...
-						&& (([arg, handler] = splitArgs(arg, rest)), handler))
+						// NOTE: we set arg here...
+						&& ([arg, handler] = splitArgs(arg, rest))[1] )
 					// dynamic or error...
 					|| parsed.handler(dfl)[1]
 				// no handler found and '-*' or '@*' not defined...
