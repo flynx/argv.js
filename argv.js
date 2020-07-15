@@ -181,8 +181,8 @@ var afterCallback = function(name, pre, post){
 //
 // XXX can we add more prefixes, like '+' and the like???
 // 		...add prefix handlers???
-// XXX should -help should work for any command?
-// 		...now only works for nested parsers...
+// XXX should -help should work for any command? ..not just nested parsers?
+// 		...should we indicate which thinks have more "-help"??
 // XXX might be a good idea to read metadata from package.json
 // XXX should we handle <scriptName>-<command> script calls???
 // XXX might be a good idea to use exceptions for ERROR...
