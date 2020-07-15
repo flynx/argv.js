@@ -45,13 +45,20 @@ module.ERROR =
 //	afterCallback(name)
 //		-> func
 //
-//	afterCallback(name, pre-action, post-action)
+//	afterCallback(name, pre_action, post_action)
 //		-> func
 //
 //
 //	func(..)
 //		-> this
 //		-> res 
+//
+//	pre_action(...args)
+//		-> false
+//		-> ...
+//
+//	post_action(...args)
+//		-> ...
 //
 var afterCallback = function(name, pre, post){
 	var attr = '__after_'+ name
@@ -179,6 +186,7 @@ var afterCallback = function(name, pre, post){
 // NOTE: essentially this parser is a very basic stack language...
 // 		XXX can we implement the whole thing directly as a stack language???
 //
+// XXX should a flag have more than one value???
 // XXX can we add more prefixes, like '+' and the like???
 // 		...add prefix handlers???
 // XXX should -help should work for any command?
@@ -206,7 +214,8 @@ object.Constructor('Parser', {
 	// NOTE: we only care about differentiating an option from a command
 	// 		here by design...
 	optionInputPattern: /^--?(.*)$/,
-	commandInputPattern: /^([a-zA-Z*].*)$/,
+	//commandInputPattern: /^([.0-9a-zA-Z*].*)$/,
+	commandInputPattern: /^([^-].*)$/,
 
 
 	// instance stuff...
@@ -303,10 +312,12 @@ object.Constructor('Parser', {
 	handler: function(key){
 		// clear arg value...
 		key = key.split(/=/).shift()
-		// option or command?
+		// normalize option/command name...
 		key = this.optionInputPattern.test(key) ?
-			key.replace(this.optionInputPattern, this.optionPrefix+'$1')
-			: key.replace(this.commandInputPattern, this.commandPrefix+'$1')
+				key.replace(this.optionInputPattern, this.optionPrefix+'$1')
+			: !key.startsWith(this.commandPrefix) ?
+				key.replace(this.commandInputPattern, this.commandPrefix+'$1')
+			: key
 		var seen = new Set()
 		while(key in this 
 				&& typeof(this[key]) == typeof('str')){
@@ -680,15 +691,20 @@ object.Constructor('Parser', {
 					handler
 					: (handler.handler 
 						|| defaultHandler(handler)))
-				.call(parsed, rest, arg,
+				// XXX should we pass unhandled explicitly???
+				// 		...if yes then we do not need to splice it back in below...
+				.call(parsed, 
+					rest, 
+					arg,
 					...(value != null ? 
 						[value] 
 						: []))
 
 			// add nested parser result parsed...
 			// XXX should this be done also for .STOP / .ERROR / ... ???
-			handler instanceof Parser
-				&& parsed.handlerDefault(handler, rest, arg, res)
+			if(handler instanceof Parser){
+				parsed.unhandled.splice(parsed.unhandled.length, 0, ...res.unhandled)
+				parsed.handlerDefault(handler, rest, arg, res) }
 
 			res === module.STOP
 				&& parsed.stop(arg, rest)
@@ -721,6 +737,10 @@ object.Constructor('Parser', {
 		var unhandled = parsed.unhandled = []
 		while(rest.length > 0){
 			var arg = rest.shift()
+			// non-string stuff in arg list...
+			if(typeof(arg) != typeof('str')){
+				unhandled.push(arg) 
+				continue }
 			// NOTE: opts and commands do not follow the same path here 
 			// 		because options if unidentified need to be split into
 			// 		single letter options and commands to not...
