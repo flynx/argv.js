@@ -36,6 +36,12 @@ This code is an evolution of that parser.
   - Hooks for dynamic option/command handling
   - Customizable error and stop condition handling
 
+## Planned Features
+
+- Run `<command>-<sub-command>` scripts
+- Multiple option prefix support
+
+
 
 <!-- XXX ### Alternatives -->
 
@@ -43,6 +49,7 @@ This code is an evolution of that parser.
 - [argv.js](#argvjs)
 	- [Motivation](#motivation)
 	- [Features](#features)
+	- [Planned Features](#planned-features)
 	- [Contents](#contents)
 	- [Installation](#installation)
 	- [Basic usage](#basic-usage)
@@ -102,25 +109,54 @@ Now for the code
 var argv = require('ig-argv')
 
 var parser = argv.Parser({
-		// basic/quick option...
+		// option definitions...
+		// ...
+	})
+	.then(function(){
+		// things to do after the options are handled...
+		// ...
+	})
+
+// run the parser...
+if(__filename == require.main){
+	parser(process.argv) }
+```
+
+Option definitions in a bit more detail
+```javascript
+var parser = argv.Parser({
+		// basic/quick-n-dirty option...
 		'-b': '-basic',
-		'-basic': function(){
+		'-basic': function(opts, key, value){
 			// ...
+		},
+
+		// basic value-getter option...
+		'-value': {
+			doc: 'Value option',
+			arg: 'X | x',
 		},
 
 		// full option settings...
 		'-f': '-full',
 		'-full': {
+			// option doc (optional)
 			doc: 'Option help',
+
 			// option value to be displayed in help (optional)
 			// NOTE: "attr" is used as a key to set the value if .handler
 			//		was not defined and is ingored in all other cases...
 			arg: 'VALUE | attr',
 
+			// value type handler (optional)
+			type: 'int',
+
 			// envioroment value (optional)
 			env: 'VALUE',
+
 			// default value (optional)
 			default: 123,
+
 			// required status (optional)
 			required: false,
 
@@ -144,18 +180,11 @@ var parser = argv.Parser({
 
 		// nested parser...
 		'@nested': argv.Parser({
-			// ...
-		}).then(function(){
-			// ...
-		}),
+				// ...
+			}).then(function(){
+				// ...
+			}),
 	})
-	.then(function(){
-		// XXX
-	})
-
-// run the parser only if script.js is run directly...
-if(__filename == require.main){
-	parser(process.argv) }
 ```
 
 This will create a parser that supports the folowing:
