@@ -112,6 +112,13 @@ argv.Parser({
 var lang =
 module.lang =
 argv.Parser({
+	// handle both +x and -x
+	optionInputPattern: /^[+-][+-]?(.*)$/,
+
+	// XXX for testing, remove when done...
+	'-echo': function(...args){
+		console.log('ECHO:', ...args)},
+
 	// helpers...
 	push: function(...items){
 		this.unhandled.splice(this.unhandled.length, 0, ...items) 

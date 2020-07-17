@@ -195,6 +195,15 @@ var afterCallback = function(name, pre, post){
 // 		...manually this is trivial, automating it would complicate things,
 // 		will think about it when we need this feature more than once...
 // XXX FEATURE (DELAYED): multiple prefixes, like '+' and the like...
+// 		...one way to do this manualy now is to set the appropriate 
+// 		.optionInputPattern and handle the arg in the handler itself...
+// 		...not sure yet how to automate this:
+// 			- prefix handler -- pass the prefix to a special handler and 
+// 				it decides what to do...
+// 					-help -> this.handlePrefix('-', ...)
+// 			- option prefix derived from arg prefix i.e.
+// 					-help -> this['-help'](..)
+// 					+help -> this['+help'](..)
 //
 //
 // XXX should -help should work for any command? ..not just nested parsers?
@@ -596,7 +605,7 @@ object.Constructor('Parser', {
 			&& process.exit(1) },
 
 
-	// post parsing callbacks...
+	// Post parsing callbacks...
 	//
 	// 	.then(callback(unhandleed, root_value, rest))
 	//
@@ -607,7 +616,7 @@ object.Constructor('Parser', {
 	stop: afterCallback('stop'),
 	error: afterCallback('error'),
 
-	// remove callback...
+	// Remove callback...
 	off: function(evt, handler){
 		var l = this['__after_'+evt]
 		var i = l.indexOf(handler)
@@ -616,6 +625,7 @@ object.Constructor('Parser', {
 		return this },
 
 
+	// Handle the arguments...
 	//
 	//	parser()
 	//		-> result
@@ -625,6 +635,7 @@ object.Constructor('Parser', {
 	//
 	//	parser(argv, main)
 	//		-> result
+	//
 	//
 	// NOTE: the result is an object inherited from parser and containing 
 	// 		all the parse data...
@@ -737,7 +748,7 @@ object.Constructor('Parser', {
 			var handler = parsed.handler(a)[1]
 			return [a, handler] }
 
-		// parse the arguments and call handlers...
+		// parse/interpret the arguments and call handlers...
 		var values = new Set()
 		var seen = new Set()
 		var unhandled = parsed.unhandled = []
