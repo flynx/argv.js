@@ -113,7 +113,7 @@ var lang =
 module.lang =
 argv.Parser({
 	// handle both +x and -x
-	optionInputPattern: /^[+-][+-]?(.*)$/,
+	optionInputPattern: /^([+-])\1?([^+-].*|)$/,
 
 	// XXX for testing, remove when done...
 	'-echo': function(...args){

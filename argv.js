@@ -226,9 +226,12 @@ object.Constructor('Parser', {
 	splitOptions: true,
 	optionPrefix: '-',
 	commandPrefix: '@',
+	// NOTE: this must contain two goups the first is the prefix and the 
+	// 		second must contain the option name...
 	// NOTE: we only care about differentiating an option from a command
 	// 		here by design...
-	optionInputPattern: /^--?(.*)$/,
+	optionInputPattern: /^([+-])\1?([^+-].*|)$/,
+	//optionInputPattern: /^(-)-?(.*)$/,
 	//commandInputPattern: /^([.0-9a-zA-Z*].*)$/,
 	commandInputPattern: /^([^-].*)$/,
 
@@ -329,7 +332,7 @@ object.Constructor('Parser', {
 		key = key.split(/=/).shift()
 		// normalize option/command name...
 		key = this.optionInputPattern.test(key) ?
-				key.replace(this.optionInputPattern, this.optionPrefix+'$1')
+				key.replace(this.optionInputPattern, this.optionPrefix+'$2')
 			: !key.startsWith(this.commandPrefix) ?
 				key.replace(this.commandInputPattern, this.commandPrefix+'$1')
 			: key

@@ -64,11 +64,7 @@ This code is an evolution of that parser.
 			- [`.license`](#license)
 			- [`.examples`](#examples)
 			- [`.footer`](#footer)
-			- [Help formatting](#help-formatting)
-				- [`.helpColumnOffset`](#helpcolumnoffset)
-				- [`.helpColumnPrefix`](#helpcolumnprefix)
-				- [`.helpArgumentSeparator`](#helpargumentseparator)
-				- [`.helpValueSeparator`](#helpvalueseparator)
+			- [More control over help...](#more-control-over-help)
 		- [Nested parsers](#nested-parsers)
 	- [Components and API](#components-and-api)
 		- [`THEN`, `STOP` and `ERROR`](#then-stop-and-error)
@@ -84,6 +80,7 @@ This code is an evolution of that parser.
 		- [`.handleArgument(..)`](#handleargument)
 		- [`.handleArgumentValue(..)`](#handleargumentvalue)
 		- [`.handleErrorExit(..)`](#handleerrorexit)
+		- [More...](#more)
 	- [License](#license-1)
 
 
@@ -118,14 +115,16 @@ var parser = argv.Parser({
 	})
 
 // run the parser...
-if(__filename == require.main){
-	parser(process.argv) }
+__filename == require.main
+	&& parser(process.argv)
 ```
 
 Option definitions in a bit more detail
 ```javascript
 var parser = argv.Parser({
-		// basic/quick-n-dirty option...
+		// XXX config...
+
+		// basic quick-n-dirty option...
 		'-b': '-basic',
 		'-basic': function(opts, key, value){
 			// ...
@@ -156,7 +155,7 @@ var parser = argv.Parser({
 
 			// default value (optional)
 			default: 123,
-
+			
 			// required status (optional)
 			required: false,
 
@@ -184,6 +183,8 @@ var parser = argv.Parser({
 			}).then(function(){
 				// ...
 			}),
+
+		// ...
 	})
 ```
 
@@ -316,19 +317,10 @@ Aditional information.
 
 Default value: `undefined`
 
-#### Help formatting
 
-##### `.helpColumnOffset`
-Default value: `3`
+#### More control over help...
 
-##### `.helpColumnPrefix`
-Default value: `"- "`
-
-##### `.helpArgumentSeparator`
-Default value: `", "`
-
-##### `.helpValueSeparator`
-Default value: `" "`
+For more info on help formatting see `.help*` attributes in the [source](./argv.js).
 
 
 ### Nested parsers
@@ -346,13 +338,15 @@ Values that if returned by option/command handlers can control the parse flow.
 - `ERROR` &ndash; Stop parsing, call `.error(..)` callbacks and
   exit with an error.
 
-### `Parser(..)`
+### `Parser(..)` 
 
 Construct a parser instance
 ```
 Parser(<spec>)
 	-> <parser>
 ```
+
+See [`<parser>(..)`](#parser-1) for more info.
 
 #### `.then(..)`
 
@@ -446,6 +440,10 @@ its head.
 ### `.handleArgumentValue(..)`
 
 ### `.handleErrorExit(..)`
+
+### More...
+
+For more info see the [source](./argv.js).
 
 
 ## License
