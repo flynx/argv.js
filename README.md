@@ -39,7 +39,7 @@ This code is an evolution of that parser.
 ## Planned Features
 
 - Run `<command>-<sub-command>` scripts
-- Option grouping
+- Option grouping (???)
 
 
 
@@ -57,6 +57,7 @@ This code is an evolution of that parser.
 		- [Option/command configuration](#optioncommand-configuration)
 			- [`<option>.handler(..)`](#optionhandler)
 			- [`<option>.doc`](#optiondoc)
+			- [`<option>.priority`](#optionpriority)
 			- [`<option>.arg`](#optionarg)
 			- [`<option>.type`](#optiontype)
 			- [`<option>.env`](#optionenv)
@@ -64,6 +65,7 @@ This code is an evolution of that parser.
 			- [`<option>.required`](#optionrequired)
 			- [`<option>.valueRequired`](#optionvaluerequired)
 		- [Built-in options](#built-in-options)
+			- [`-` / `--`](#ulli---liul)
 			- [`-v` / `--version`](#-v----version)
 			- [`-h` / `--help`](#-h----help)
 				- [Value placeholders](#value-placeholders)
@@ -228,8 +230,8 @@ Parser(<spec>)
 	-> <parser>
 ```
 
-The `<spec>` object is "merged" int the `<parser>` instance overriding or extending 
-it's API/data.
+The `<spec>` object is "merged" int the `<parser>` instance overriding 
+or extending it's API/data.
 
 The `<parser>` expects/handles the following data in the `<spec>` object:
 
@@ -258,8 +260,8 @@ The `<parser>` expects/handles the following data in the `<spec>` object:
 	That value _references_ a different option or command, i.e. is an 
 	option/commnad name.
 
-	Looping (referencing the original alias) or dead-end (referencing non-existant 
-	options) aliases are ignored.
+	Looping (referencing the original alias) or dead-end (referencing 
+	non-existant options) aliases are ignored.
 
 
 ### Option/command configuration
@@ -285,25 +287,49 @@ or
 },
 ```
 
-The handler gets called if the option is given or if it has a default value but was not given.
+The handler gets called if the option is given or if it has a default
+value but was not given.
 
-`opts` contains the mutable list of arguments passed to the script starting with but not including the current argument. If the handler needs to handle it's own arguments it can modify this list in place and the _parser_ will continue from that state.
+`opts` contains the mutable list of arguments passed to the script
+starting with but not including the current argument. If the handler
+needs to handle it's own arguments it can modify this list in place and
+the _parser_ will continue from that state.
 
-One usecase for this would be and option handler that needs to handle it's arguemnts on its own.
+One usecase for this would be and option handler that needs to handle
+it's arguemnts on its own.
 
-`key` is the actual normalized (`[<prefix-char>]<name-str>`) option/command triggering the `.handler(..)`. 
+`key` is the actual normalized (`[<prefix-char>]<name-str>`)
+option/command triggering the `.handler(..)`.
 
-This can be useful to identify the actual option triggering the handler when using aliases or if a single handler is used for multiple options, or when it is needed to handle a specific prefix differently (a-la `find`).
+This can be useful to identify the actual option triggering the handler
+when using aliases or if a single handler is used for multiple options, or
+when it is needed to handle a specific prefix differently (a-la `find`).
 
-`value` is the option value. A _value_ either ecplicitly passed (via `=` syntax), implicitly parsed from the `argv` via the `<option>.arg` definition or `undefined` otherwise.
+`value` is the option value. A _value_ either ecplicitly passed (via
+`=` syntax), implicitly parsed from the `argv` via the `<option>.arg`
+definition or `undefined` otherwise.
 
-A handler can return one of the `THEN`, `STOP` or `ERROR` to control further parsing and/or execution.  
+A handler can return one of the `THEN`, `STOP` or `ERROR` to control
+further parsing and/or execution.
 (See: [`THEN`, `STOP` and `ERROR`](#then-stop-and-error) for more info.)
 
 
 #### `<option>.doc`
 
 Option/command documentation string used in `-help`.
+
+#### `<option>.priority`
+
+Option/command priority in the `-help`.
+
+Can be a positive or negative number or `undefined`.
+
+Ordering is as follows:
+- options in decending positive `.priority`,
+- options with undefined `.priority` in order of definition,
+- options in decending negative `.priority`.
+
+Note that options and commands are grouped separately.
 
 
 #### `<option>.arg`
@@ -315,16 +341,24 @@ arg: '<arg-name>'
 arg: '<arg-name> | <key>'
 ```
 
-If defined and no explicit value is passed to the option comand (via `=`) then the _parser_ will consume the directly next non-option if present in `argv` as a value, passing it to the `<option>.type` handler, if defined, then the `<option>.handler(..)`, if defined, or setting it to `<key>` otherwise.
+If defined and no explicit value is passed to the option comand (via `=`)
+then the _parser_ will consume the directly next non-option if present in
+`argv` as a value, passing it to the `<option>.type` handler, if defined,
+then the `<option>.handler(..)`, if defined, or setting it to `<key>`
+otherwise.
 
-Sets the option/command arument name given in `-help` for the option and the key where the value will be written.
+Sets the option/command arument name given in `-help` for the option
+and the key where the value will be written.
 
 The `<key>` is not used if `<option>.handler(..)` is defined.
 
 
 #### `<option>.type`
 
-Option/command argument type definition. The given type handler will be used to convert the option value before it is passed to the handler or set to the given `<key>`.
+Option/command argument type definition. 
+
+The given type handler will be used to convert the option value before
+it is passed to the handler or set to the given `<key>`.
 
 Supported types:
 - `"int"`
@@ -333,35 +367,52 @@ Supported types:
 - `"string"`
 - `"date"`
 
-Type handlers are defined in `Parser.typeHandlers` or can be overwritten by `<spec>.typeHandlers`.
+Type handlers are defined in `Parser.typeHandlers` or can be overwritten
+by `<spec>.typeHandlers`.
 
 
 #### `<option>.env`
 
-If set, determines the environment variable to be used as the default value for option/command.
+Determines the environment variable to be used as the default value for
+option/command, if set.
 
-If this is set, the corresponding environment variable is non-zero and `<option>.handler(..)` is defined, the handler will be called regardless of weather the option was given by the user or not.
+If this is set, the corresponding environment variable is non-zero and
+`<option>.handler(..)` is defined, the handler will be called regardless
+of weather the option was given by the user or not.
 
 
 #### `<option>.default`
 
 Sets the default value for option/command's value.
 
-If this is set to a value other than `undefined` and `<option>.handler(..)` is defined, the handler will be called regardless of weather the option was given by the user or not.
+If this is set to a value other than `undefined` and
+`<option>.handler(..)` is defined, the handler will be called regardless
+of weather the option was given by the user or not.
 
 
 #### `<option>.required`
 
-Sets weather the _parser_ should complain/err if option/command is not given.
+Sets weather the _parser_ should complain/err if option/command is
+not given.
 
 
 #### `<option>.valueRequired`
 
-Sets weather the _parser_ should complain/err if option/value value is not given.
+Sets weather the _parser_ should complain/err if option/value value is
+not given.
 
 
 
 ### Built-in options
+
+#### `-` / `--`
+
+Stop processing further options.
+
+This can be used to terminate nested parsers or to stop option processing
+in the root parser to handle the rest of the options in `.then(..)`,
+for example.
+
 
 #### `-v` / `--version`
 
@@ -508,7 +559,8 @@ callback(<unhandled>, <root-value>, <rest>)
 	-> <obj>
 ```
 
-`then` is triggered when parsing is done or stopped from an option handler by returning `THEN`.
+`then` is triggered when parsing is done or stopped from an option
+handler by returning `THEN`.
 
 #### `.stop(..)`
 
