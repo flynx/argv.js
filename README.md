@@ -16,7 +16,7 @@ This code is an evolution of that parser.
 ## Features
 
 - Simple
-- Supports both the _option_ (a-la `find`) and _command_ (a-la `git`) paradigms
+- Supports both the _option_ (a-la `ls`) and _command_ (a-la `git`) paradigms
 - Nestable  
   parsers can be nested as option/command handlers defining independent 
   nested contexts
@@ -25,21 +25,21 @@ This code is an evolution of that parser.
 - Option/command value passing  
   implicit `-a 123` (requires definition or manual handling) or explicit 
   `-a=123`
-- Environment variable option/command values  
-  env can control option defaults
-- Reasonable defaults
-  - `-help` &ndash; generate and print help,
-  - `-version` &ndash; print version,
-  - `-` &ndash; stop argument processing,
+- Environment variable option/command value defaults
+- Multiple option prefix support
+- Reasonable defaults:
+  - `-help` &ndash; generate and print help
+  - `-version` &ndash; print version
+  - `-` &ndash; stop argument processing
 - Extensible:
-  - Hooks for option value conversion _(XXX should this be implemented???)_
+  - Hooks for option value conversion
   - Hooks for dynamic option/command handling
   - Customizable error and stop condition handling
 
 ## Planned Features
 
 - Run `<command>-<sub-command>` scripts
-- Multiple option prefix support
+- Option grouping
 
 
 
