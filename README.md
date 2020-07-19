@@ -66,6 +66,7 @@ This code is an evolution of that parser.
 			- [`<option>.valueRequired`](#optionvaluerequired)
 		- [Built-in options](#built-in-options)
 			- [`-` / `--`](#ulli---liul)
+			- [`-*` / `@*`](#---)
 			- [`-v` / `--version`](#-v----version)
 			- [`-h` / `--help`](#-h----help)
 				- [Value placeholders](#value-placeholders)
@@ -89,7 +90,6 @@ This code is an evolution of that parser.
 	- [Advanced parser API](#advanced-parser-api)
 		- [`.print(..)` / `.printError(..)`](#print--printerror)
 		- [`.handlerDefault(..)`](#handlerdefault)
-		- [`.handleArgument(..)`](#handleargument)
 		- [`.handleArgumentValue(..)`](#handleargumentvalue)
 		- [`.handleErrorExit(..)`](#handleerrorexit)
 		- [More...](#more)
@@ -230,20 +230,20 @@ Parser(<spec>)
 	-> <parser>
 ```
 
-The `<spec>` object is "merged" int the `<parser>` instance overriding 
+The `<spec>` object is "merged" into the `<parser>` instance overriding 
 or extending it's API/data.
 
 The `<parser>` expects/handles the following data in the `<spec>` object:
 
 - the configuration attributes and methods  
-	This sections lists attributes and methods designed to be set/modified in
-	`<spec>` passed to `Parser(..)`.
+	Attributes and methods used to configure, modify, extend or overload 
+	parser functionality.
 
 	Note that these attributes are the same attributes inherited by `<parser>`
-	and are simply merged into the new instance created by `Parser(..)`, this 
-	there are no restrictions on what attributes/methods can be overloaded in 
-	this way but care must be taken when overloading elements that were not 
-	designed to be overloaded.
+	and are simply merged into the new instance created by `Parser(..)`, thus 
+	there are no restrictions on what attributes/methods can be overloaded 
+	or extended in this way, but care must be taken when overloading elements 
+	that were not designed to be overloaded.
 
 - option/command definitions  
 	The keys for these are prefixed either by `"-"` for options or by `"@"` 
@@ -272,13 +272,6 @@ Option handler.
 
 
 ```javascript
-'-option': function(opts, key, value){
-	// handle the option...
-	// ...
-},
-```
-or
-```javascript
 '-option': {
 	handler: function(opts, key, value){
 		// handle the option...
@@ -286,28 +279,40 @@ or
 	},
 },
 ```
+or
+Or a shorthand:
+```javascript
+'-option': function(opts, key, value){
+	// handle the option...
+	// ...
+},
+```
 
-The handler gets called if the option is given or if it has a default
-value but was not given.
+The handler gets called if the option is given or if it was not explicitly 
+given but has a default value set.
 
 `opts` contains the mutable list of arguments passed to the script
-starting with but not including the current argument. If the handler
+starting just after the currently handled option/command. If the handler
 needs to handle it's own arguments it can modify this list in place and
-the _parser_ will continue from that state.
+the _parser_ will continue from the resulting state.
 
-One usecase for this would be and option handler that needs to handle
-it's arguemnts on its own.
+One use-case for this would be and option handler that needs to handle
+it's arguments in a custom manner, for example for handling multiple 
+arguments.
 
 `key` is the actual normalized (`[<prefix-char>]<name-str>`)
 option/command triggering the `.handler(..)`.
 
 This can be useful to identify the actual option triggering the handler
-when using aliases or if a single handler is used for multiple options, or
-when it is needed to handle a specific prefix differently (a-la `find`).
+when using aliases, if a single handler is used for multiple options, or
+when it is needed to handle a specific prefix differently (a-la `find`'s 
+syntax with `+option` and `-option` having different semantics).
 
-`value` is the option value. A _value_ either ecplicitly passed (via
-`=` syntax), implicitly parsed from the `argv` via the `<option>.arg`
-definition or `undefined` otherwise.
+`value` gets the value passed to the option. 
+
+A _value_ can be passed either explicitly passed (via `=` syntax), 
+implicitly parsed from the `argv` via the `<option>.arg` definition or 
+is `undefined` otherwise.
 
 A handler can return one of the `THEN`, `STOP` or `ERROR` to control
 further parsing and/or execution.
@@ -317,6 +322,7 @@ further parsing and/or execution.
 #### `<option>.doc`
 
 Option/command documentation string used in `-help`.
+
 
 #### `<option>.priority`
 
@@ -414,6 +420,15 @@ in the root parser to handle the rest of the options in `.then(..)`,
 for example.
 
 
+#### `-*` / `@*`
+
+Handle options/commands for which no definition is found.
+
+By default `-*` will print an "unhandled option/command" error and terminate.
+
+By default `@*` is an alias to `-*`.
+
+
 #### `-v` / `--version`
 
 This will output the value of `.version` and exit.
@@ -456,6 +471,7 @@ will get replaced with appropriate values when rendering help.
 - `$VERSION` replaced with `.version`,
 - `$LICENSE` replaced with `.license`.
 
+
 ##### Automatically defined values
 
 These values are set by the parser just before parsing starts:
@@ -465,6 +481,7 @@ These values are set by the parser just before parsing starts:
 
 These will be overwritten when the parser is called.
 
+
 ##### `.doc`
 Script documentation.
 
@@ -472,12 +489,14 @@ Script documentation.
 
 Default value: `undefined`
 
+
 ##### `.usage`
 Basic usage hint.
 
     <spec>.usage = <string> | <function> | undefined
 
 Default value: `"$SCRIPTNAME [OPTIONS]"`
+
 
 ##### `.version`
 Version number.
@@ -488,12 +507,14 @@ If this is not defined `-version` will print `"0.0.0"`.
 
 Default value: `undefined`
 
+
 ##### `.license`
 Short license information.
 
     <spec>.usage = <string> | <function> | undefined
 
 Default value: `undefined`
+
 
 ##### `.examples`
 
@@ -507,6 +528,7 @@ Example list format:
 	]
 
 Default value: `undefined`
+
 
 ##### `.footer`
 Aditional information.
@@ -522,6 +544,57 @@ For more info on help formatting see `.help*` attributes in the [source](./argv.
 
 
 ### Nested parsers
+
+An option/command handler can be a _parser instance_.
+
+From the point of view of the _nested parser_ nothing is different &ndash; 
+it gets passed the remaining list of arguments and handles it on it's own.
+
+The _containing parser_ treats the nested parser just like any normal 
+handler with it's attributes and API.
+
+Note that if the _nested parser_ consumes the rest of the arguments,
+the _containing parser_ is left with an empty list and it will stop 
+parsing and return normally.
+
+A way to explicitly stop the _nested parser_ processing at a specific 
+point in the argument list is to pass it a `-` argument at that point.
+
+For example:
+```shell
+$ script -a nested -b -c - -x -y -z
+```
+
+Here `script` will handle `-a` then delegate to `nested` which in turn
+will consume `-b`, `-c` and on `-` return, rest of the arguments are 
+again handled by `script`.
+
+This is similar to the way programming languages handle passing arguments 
+to functions, for example in [Lisp](https://en.wikipedia.org/wiki/Common_Lisp) 
+this is similar to:
+```lisp
+(script a (nested b c) x y z)
+```
+
+And in _C-like-call-syntax_ languages like 
+[C](https://en.wikipedia.org/wiki/C_(programming_language))/[Python](https://python.org)/JavaScript/... 
+this would (a bit less cleanly) be:
+```javascript
+script(a, nested(b, c), x, y, z)
+```
+
+The difference here is that `nested` has control over what it handles, and
+depending on its definition, can either override the default `-` option as 
+well as stop handling arguments at any point it chooses (similar to _words_ 
+in stack languages like [Fort](https://en.wikipedia.org/wiki/Forth_(programming_language)) 
+or [Factor](https://factorcode.org/)).
+
+<!-- 
+XXX split ./lang.js from ./test.js...
+
+See [lang.js](./lang.js) for more fun with argv and programming languages ;)
+-->
+
 
 
 ## Components and API
@@ -628,17 +701,64 @@ If `<main>` is present in `<argv>` all the arguments before it will
 be ignored, otherwise the whole list is processed as if `<main>` was 
 its head.
 
+
+
 ## Advanced parser API
 
 ### `.print(..)` / `.printError(..)`
 
+Handle how `Parser(..)` prints things.
+
+`.print(..)` and `.printError(..)` are very similar but handle different 
+cases, similar to `console.log(..)` and `console.error(..)`
+```
+<parser>.print(...)
+	-> <parser>
+
+<parser>.printError(...)
+	-> <parser>
+```
+
+Both support callback binding:
+```
+<parser>.print(<func>)
+	-> <parser>
+
+<parser>.printError(<func>)
+	-> <parser>
+```
+
+Both `.print(..)` and `.printError(..)` can safely be overloaded if the 
+callback feature is not going to be used by the user &ndash; the print 
+callbacks are not used internally.  
+For full callback support see: `extra.afterCallback(..)` in [argv.js](./argv.js).
+
+
 ### `.handlerDefault(..)`
 
-### `.handleArgument(..)`
+Called when `<option>.handler(..)` is not defined.
+
+By default this sets option values on the _parsed_ object.
+
 
 ### `.handleArgumentValue(..)`
 
+Handle argument value conversion.
+
+By default this handles the `<option>.type` mechanics.
+
+If this is set to `false` values will be set as-is.
+
+
 ### `.handleErrorExit(..)`
+
+Handle exit on error.
+
+By default this will call process.exit(1) for the _root parser_ and does 
+nothing for _nested parsers_.
+
+If set to `false` the _parser_ will simply return like any normal function.
+
 
 ### More...
 

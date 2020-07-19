@@ -41,6 +41,9 @@ module.ERROR =
 //---------------------------------------------------------------------
 // helpers...
 
+module.extra = {}
+
+
 //
 //	afterCallback(name)
 //		-> func
@@ -60,7 +63,9 @@ module.ERROR =
 //	post_action(...args)
 //		-> ...
 //
-var afterCallback = function(name, pre, post){
+var afterCallback = 
+module.extra.afterCallback =
+function(name, pre, post){
 	var attr = '__after_'+ name
 	return function(...args){
 		var that = this
