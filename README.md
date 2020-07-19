@@ -279,8 +279,7 @@ Option handler.
 	},
 },
 ```
-or
-Or a shorthand:
+or a shorthand:
 ```javascript
 '-option': function(opts, key, value){
 	// handle the option...
