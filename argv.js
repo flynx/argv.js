@@ -357,6 +357,21 @@ object.Constructor('Parser', {
 	
 	// Help...
 	//
+	// Formatting option spec:
+	//
+	//                       +-------------- .helpColumnOffset
+	//                      /
+	//  |<------------------------>|
+	//
+	//      -o, --option=VALUE      - option doc
+	//        __        _           __
+	//          \        \            \
+	//           \        \            +---- .helpColumnPrefix
+	//            \        \
+	//             \        +--------------- .helpValueSeparator
+	//              \
+	//               +---------------------- .helpArgumentSeparator
+	//
 	// doc config...
 	helpColumnOffset: 3,
 	helpColumnPrefix: '- ',
@@ -369,7 +384,7 @@ object.Constructor('Parser', {
 	usage: '$SCRIPTNAME [OPTIONS]',
 	doc: undefined,
 	examples: undefined,
-	//footer: '$SCRIPTNAME ($VERSION / $LICENSE) by $AUTHOR',
+	//footer: 'Written by $AUTHOR ($VERSION / $LICENSE).',
 	footer: undefined,
 
 	// XXX should wrap long lines...
