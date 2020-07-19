@@ -71,29 +71,29 @@ This code is an evolution of that parser.
 			- [`-h` / `--help`](#-h----help)
 				- [Value placeholders](#value-placeholders)
 				- [Automatically defined values](#automatically-defined-values)
-				- [`.doc`](#doc)
-				- [`.usage`](#usage)
-				- [`.version`](#version)
-				- [`.license`](#license)
-				- [`.examples`](#examples)
-				- [`.footer`](#footer)
+				- [`<parser>.doc`](#parserdoc)
+				- [`<parser>.usage`](#parserusage)
+				- [`<parser>.version`](#parserversion)
+				- [`<parser>.license`](#parserlicense)
+				- [`<parser>.examples`](#parserexamples)
+				- [`<parser>.footer`](#parserfooter)
 				- [More control over help...](#more-control-over-help)
 		- [Nested parsers](#nested-parsers)
 	- [Components and API](#components-and-api)
 		- [`THEN`, `STOP` and `ERROR`](#then-stop-and-error)
 		- [`Parser(..)`](#parser)
-			- [`.then(..)`](#then)
-			- [`.stop(..)`](#stop)
-			- [`.error(..)`](#error)
-			- [`.off(..)`](#off)
+			- [`<parser>.then(..)`](#parserthen)
+			- [`<parser>.stop(..)`](#parserstop)
+			- [`<parser>.error(..)`](#parsererror)
+			- [`<parser>.off(..)`](#parseroff)
 			- [`<parser>(..)`](#parser-1)
 	- [Advanced parser API](#advanced-parser-api)
-		- [`.print(..)` / `.printError(..)`](#print--printerror)
-		- [`.handlerDefault(..)`](#handlerdefault)
-		- [`.handleArgumentValue(..)`](#handleargumentvalue)
-		- [`.handleErrorExit(..)`](#handleerrorexit)
+		- [`<parser>.print(..)` / `<parser>.printError(..)`](#parserprint--parserprinterror)
+		- [`<parser>.handlerDefault(..)`](#parserhandlerdefault)
+		- [`<parser>.handleArgumentValue(..)`](#parserhandleargumentvalue)
+		- [`<parser>.handleErrorExit(..)`](#parserhandleerrorexit)
 		- [More...](#more)
-	- [License](#license-1)
+	- [License](#license)
 
 
 ## Installation
@@ -137,6 +137,7 @@ XXX make this a set of practical options and leave the attr explanation to later
 ```javascript
 var parser = argv.Parser({
 		// doc sections...
+		varsion: '0.0.1',
 		doc: 'Example script options',
 		author: 'John Smith <j.smith@some-mail.com>',
 		footer: 'Written by $AUTHOR ($VERSION / $LICENSE).',
@@ -415,7 +416,7 @@ not given.
 Stop processing further options.
 
 This can be used to terminate nested parsers or to stop option processing
-in the root parser to handle the rest of the options in `.then(..)`,
+in the root parser to handle the rest of the options in `<parser>.then(..)`,
 for example.
 
 
@@ -481,7 +482,7 @@ These values are set by the parser just before parsing starts:
 These will be overwritten when the parser is called.
 
 
-##### `.doc`
+##### `<parser>.doc`
 Script documentation.
 
     <spec>.doc = <string> | <function>
@@ -489,7 +490,7 @@ Script documentation.
 Default value: `undefined`
 
 
-##### `.usage`
+##### `<parser>.usage`
 Basic usage hint.
 
     <spec>.usage = <string> | <function> | undefined
@@ -497,7 +498,7 @@ Basic usage hint.
 Default value: `"$SCRIPTNAME [OPTIONS]"`
 
 
-##### `.version`
+##### `<parser>.version`
 Version number.
 
     <spec>.usage = <string> | <function> | undefined
@@ -507,7 +508,7 @@ If this is not defined `-version` will print `"0.0.0"`.
 Default value: `undefined`
 
 
-##### `.license`
+##### `<parser>.license`
 Short license information.
 
     <spec>.usage = <string> | <function> | undefined
@@ -515,7 +516,7 @@ Short license information.
 Default value: `undefined`
 
 
-##### `.examples`
+##### `<parser>.examples`
 
     <spec>.usage = <string> | <list> | <function> | undefined
 
@@ -529,7 +530,7 @@ Example list format:
 Default value: `undefined`
 
 
-##### `.footer`
+##### `<parser>.footer`
 Aditional information.
 
     <spec>.footer = <string> | <function> | undefined
@@ -539,7 +540,7 @@ Default value: `undefined`
 
 ##### More control over help...
 
-For more info on help formatting see `.help*` attributes in the [source](./argv.js).
+For more info on help formatting see `<parser>.help*` attributes in the [source](./argv.js).
 
 
 ### Nested parsers
@@ -602,10 +603,10 @@ See [lang.js](./lang.js) for more fun with argv and programming languages ;)
 
 Values that if returned by option/command handlers can control the parse flow.
 
-- `THEN` &ndash; Stop parsing and call `.then(..)` callbacks.
-- `STOP` &ndash; Stop parsing and call `.stop(..)` callbacks, 
-  skipping `.then(..)`.
-- `ERROR` &ndash; Stop parsing, call `.error(..)` callbacks and
+- `THEN` &ndash; Stop parsing and call `<parser>.then(..)` callbacks.
+- `STOP` &ndash; Stop parsing and call `<parser>.stop(..)` callbacks, 
+  skipping `<parser>.then(..)`.
+- `ERROR` &ndash; Stop parsing, call `<parser>.error(..)` callbacks and
   exit with an error.
 
 ### `Parser(..)` 
@@ -618,7 +619,7 @@ Parser(<spec>)
 
 See [`<parser>(..)`](#parser-1) for more info.
 
-#### `.then(..)`
+#### `<parser>.then(..)`
 
 Add callback to `then` "event".
 ```
@@ -634,7 +635,7 @@ callback(<unhandled>, <root-value>, <rest>)
 `then` is triggered when parsing is done or stopped from an option
 handler by returning `THEN`.
 
-#### `.stop(..)`
+#### `<parser>.stop(..)`
 
 Add callback to `stop` "event".
 ```
@@ -649,7 +650,7 @@ callback(<arg>, <rest>)
 
 `stop` is triggered when a handler returns `STOP`.
 
-#### `.error(..)`
+#### `<parser>.error(..)`
 
 Add callback to `error` "event".
 ```
@@ -665,7 +666,7 @@ callback(<reason>, <arg>, <rest>)
 `error` is triggered when a handler returns `ERROR`.
 
 
-#### `.off(..)`
+#### `<parser>.off(..)`
 
 Remove callback from "event".
 ```
@@ -704,11 +705,11 @@ its head.
 
 ## Advanced parser API
 
-### `.print(..)` / `.printError(..)`
+### `<parser>.print(..)` / `<parser>.printError(..)`
 
-Handle how `Parser(..)` prints things.
+Handle how `<parser>` prints things.
 
-`.print(..)` and `.printError(..)` are very similar but handle different 
+`<parser>.print(..)` and `<parser>.printError(..)` are very similar but handle different 
 cases, similar to `console.log(..)` and `console.error(..)`
 ```
 <parser>.print(...)
@@ -727,20 +728,21 @@ Both support callback binding:
 	-> <parser>
 ```
 
-Both `.print(..)` and `.printError(..)` can safely be overloaded if the 
-callback feature is not going to be used by the user &ndash; the print 
-callbacks are not used internally.  
-For full callback support see: `extra.afterCallback(..)` in [argv.js](./argv.js).
+Both `<parser>.print(..)` and `<parser>.printError(..)` can safely be 
+overloaded if the callback feature is not going to be used by the user 
+&ndash; the print callbacks are not used internally.  
+
+For full callback API see: `extra.afterCallback(..)` in [argv.js](./argv.js).
 
 
-### `.handlerDefault(..)`
+### `<parser>.handlerDefault(..)`
 
 Called when `<option>.handler(..)` is not defined.
 
 By default this sets option values on the _parsed_ object.
 
 
-### `.handleArgumentValue(..)`
+### `<parser>.handleArgumentValue(..)`
 
 Handle argument value conversion.
 
@@ -749,7 +751,7 @@ By default this handles the `<option>.type` mechanics.
 If this is set to `false` values will be set as-is.
 
 
-### `.handleErrorExit(..)`
+### `<parser>.handleErrorExit(..)`
 
 Handle exit on error.
 

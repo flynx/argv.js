@@ -211,6 +211,7 @@ function(name, pre, post){
 // 					+help -> this['+help'](..)
 //
 //
+// XXX add support for ParserError exception handling...
 // XXX should -help should work for any command? ..not just nested parsers?
 // 		...should we indicate which thinks have more "-help"??
 // XXX might be a good idea to use exceptions for ERROR...
