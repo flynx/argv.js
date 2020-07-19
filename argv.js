@@ -359,18 +359,18 @@ object.Constructor('Parser', {
 	//
 	// Formatting option spec:
 	//
-	//                       +-------------- .helpColumnOffset
+	//                       +-------------- .helpColumnOffset (3 tabs)
 	//                      /
-	//  |<------------------------>|
-	//
+	//      |<------+-------+------>|
+	//   
 	//      -o, --option=VALUE      - option doc
 	//        __        _           __
 	//          \        \            \
-	//           \        \            +---- .helpColumnPrefix
+	//           \        \            +---- .helpColumnPrefix ('- ')
 	//            \        \
-	//             \        +--------------- .helpValueSeparator
+	//             \        +--------------- .helpValueSeparator ('=')
 	//              \
-	//               +---------------------- .helpArgumentSeparator
+	//               +---------------------- .helpArgumentSeparator (', ')
 	//
 	// doc config...
 	helpColumnOffset: 3,
