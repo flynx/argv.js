@@ -134,7 +134,11 @@ Option definitions in a bit more detail
 XXX make this a set of practical options and leave the attr explanation to later...
 ```javascript
 var parser = argv.Parser({
-		// XXX config...
+		// doc sections...
+		doc: 'Example script options',
+		author: 'John Smith <j.smith@some-mail.com>',
+		footer: 'Written by $AUTHOR ($VERSION / $LICENSE).',
+		license: 'BSD-3-Clause',
 
 		// alias, this tells the parser that '-b' is the same as '-basic'
 		'-b': '-basic',
