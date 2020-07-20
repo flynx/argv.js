@@ -203,6 +203,7 @@ function(name, pre, post){
 // 		...manually this is trivial, automating it would complicate things,
 // 		will think about it when we need this feature more than once...
 //
+// XXX should type handlers produce errors???
 // XXX add support for ParserError exception handling...
 // XXX should -help should work for any command? ..not just nested parsers?
 // 		...should we indicate which thinks have more "-help"??
@@ -210,6 +211,7 @@ function(name, pre, post){
 var Parser =
 module.Parser =
 object.Constructor('Parser', {
+	// XXX should type handlers produce errors???
 	typeHandlers: {
 		int: parseInt,
 		float: parseFloat,	
