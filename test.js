@@ -46,6 +46,11 @@ argv.Parser({
 			required: true,
 		},
 
+		'-prefix': {
+			doc: 'prefix test',
+			handler: function(opts, key, value){
+				console.log('PREFIX:', key[0]) }, },
+
 		'-value': {
 			doc: 'Value option',
 			arg: 'VALUE | valueValue',
