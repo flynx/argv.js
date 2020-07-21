@@ -39,11 +39,20 @@ module.ERROR =
 
 
 //---------------------------------------------------------------------
-// helpers...
+// Helpers...
 
+// These can be useful in the argv parsing context...
+//
+module.normalizeIndent = object.normalizeIndent
+module.normalizeTextIndent = object.normalizeTextIndent
+
+
+// container for secondary/extra stuff...
+//
 module.extra = {}
 
 
+// function with callback generator...
 //
 //	afterCallback(name)
 //		-> func
@@ -62,6 +71,7 @@ module.extra = {}
 //
 //	post_action(...args)
 //		-> ...
+//
 //
 var afterCallback = 
 module.extra.afterCallback =
