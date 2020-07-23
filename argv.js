@@ -228,7 +228,6 @@ object.Constructor('Parser', {
 		number: function(v){ return new Number(v) },
 		string: function(v){ return v.toString() },
 		date: function(v){ return new Date(v) },
-		// XXX ...
 	},
 
 }, {
