@@ -93,6 +93,8 @@ argv.Parser({
 		'-d': '-dead-end',
 
 		// alias loops...
+		// XXX should we detect and complain about these???
+		// 		...maybe in a test function??
 		'-z': '-z',
 
 		'-x': '-y',
