@@ -60,6 +60,7 @@ This code is an evolution of that parser.
 			- [`<option>.priority`](#optionpriority)
 			- [`<option>.arg`](#optionarg)
 			- [`<option>.type`](#optiontype)
+			- [`<option>.collect`](#optioncollect)
 			- [`<option>.env`](#optionenv)
 			- [`<option>.default`](#optiondefault)
 			- [`<option>.required`](#optionrequired)
@@ -373,10 +374,34 @@ Supported types:
 - `"float"`
 - `"number"`
 - `"string"`
-- `"date"`
+- `"date"` &ndash; expects a `new Date(..)` compatible date string
+- `"list"` &ndash; value is split by `","` and written as an `Array` object
 
 Type handlers are defined in `Parser.typeHandlers` or can be overwritten
 by `<spec>.typeHandlers`.
+
+If not set values are written as strings. 
+
+
+#### `<option>.collect`
+
+Option value collection mode.
+
+The given handler will be used to _collect_ values passed to multiple 
+occurences of the option and write the result to `<key>`.
+
+Supported collection modes:
+- `"list"` &ndash; group values into an `Array` object
+- `"set"` &ndash; group values into a `Set` object
+- `"string"` &ndash; concatinate values into a string
+
+Type handlers are defined in `Parser.valueCollectors` or can be overwritten
+by `<spec>.valueCollectors`.
+
+`<option>.collect` can be used in conjunction with `<option>.type` to both 
+convert and collect values.
+
+If not set, each subsequent option repetition will overwrite the value.
 
 
 #### `<option>.env`
