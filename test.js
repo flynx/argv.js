@@ -59,9 +59,15 @@ argv.Parser({
 
 		'-c': '-collection',
 		'-collection': {
-			doc: 'collection option',
+			doc: 'collect ELEM',
 			arg: 'ELEM | elems',
 			collect: 'set',
+		},
+		'-t': '-toggle',
+		'-toggle': {
+			doc: 'toggle value',
+			arg: '| toggle',
+			collect: 'toggle',
 		},
 
 

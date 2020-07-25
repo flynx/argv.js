@@ -221,10 +221,11 @@ var Parser =
 module.Parser =
 object.Constructor('Parser', {
 	typeHandlers: {
+		string: function(v){ return v.toString() },
+		bool: function(v){ return !!v },
 		int: parseInt,
 		float: parseFloat,	
 		number: function(v){ return new Number(v) },
-		string: function(v){ return v.toString() },
 		date: function(v){ return new Date(v) },
 		list: function(v){ 
 			return v
@@ -235,6 +236,7 @@ object.Constructor('Parser', {
 		string: function(v, cur){ return (cur || '') + v },
 		list: function(v, cur){ return (cur || []).concat(v) },
 		set: function(v, cur){ return (cur || new Set()).add(v) },
+		toggle: function(v, cur){ return !cur },
 	},
 
 }, {

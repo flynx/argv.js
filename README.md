@@ -26,20 +26,21 @@ This code is an evolution of that parser.
   implicit `-a 123` (requires definition or manual handling) or explicit 
   `-a=123`
 - Environment variable option/command value defaults
+- Option/command value conversion
+- Option/command value collection
 - Multiple option prefix support
 - Reasonable defaults:
   - `-help` &ndash; generate and print help
   - `-version` &ndash; print version
   - `-` &ndash; stop argument processing
 - Extensible:
-  - Hooks for option value conversion
   - Hooks for dynamic option/command handling
   - Customizable error and stop condition handling
 
 ## Planned Features
 
 - Run `<command>-<sub-command>` scripts
-- Option grouping (???)
+- Option doc grouping (???)
 
 
 
@@ -66,7 +67,7 @@ This code is an evolution of that parser.
 			- [`<option>.required`](#optionrequired)
 			- [`<option>.valueRequired`](#optionvaluerequired)
 		- [Built-in options](#built-in-options)
-			- [`-` / `--`](#ulli---liul)
+			- [`-` / `--`](#-----)
 			- [`-*` / `@*`](#---)
 			- [`-v` / `--version`](#-v----version)
 			- [`-h` / `--help`](#-h----help)
@@ -209,7 +210,7 @@ var parser = argv.Parser({
 	})
 ```
 
-This will create a parser that supports the folowing:
+This will create a parser that supports the following:
 ```shell
 $ ./script.js --help 
 
@@ -260,10 +261,10 @@ The `<parser>` expects/handles the following data in the `<spec>` object:
 - option/command aliases  
 	An alias is an option/command key with a _string_ value.  
 	That value _references_ a different option or command, i.e. is an 
-	option/commnad name.
+	option/command name.
 
 	Looping (referencing the original alias) or dead-end (referencing 
-	non-existant options) aliases are ignored.
+	non-existent options) aliases are ignored.
 
 
 ### Option/command configuration
@@ -334,9 +335,9 @@ Option/command priority in the `-help`.
 Can be a positive or negative number or `undefined`.
 
 Ordering is as follows:
-- options in decending positive `.priority`,
+- options in descending positive `.priority`,
 - options with undefined `.priority` in order of definition,
-- options in decending negative `.priority`.
+- options in descending negative `.priority`.
 
 Note that options and commands are grouped separately.
 
@@ -350,13 +351,13 @@ arg: '<arg-name>'
 arg: '<arg-name> | <key>'
 ```
 
-If defined and no explicit value is passed to the option comand (via `=`)
+If defined and no explicit value is passed to the option command (via `=`)
 then the _parser_ will consume the directly next non-option if present in
 `argv` as a value, passing it to the `<option>.type` handler, if defined,
 then the `<option>.handler(..)`, if defined, or setting it to `<key>`
 otherwise.
 
-Sets the option/command arument name given in `-help` for the option
+Sets the option/command argument name given in `-help` for the option
 and the key where the value will be written.
 
 The `<key>` is not used if `<option>.handler(..)` is defined.
@@ -370,12 +371,14 @@ The given type handler will be used to convert the option value before
 it is passed to the handler or set to the given `<key>`.
 
 Supported types:
+- `"string"` (default behavior)
+- `"bool"`
 - `"int"`
 - `"float"`
 - `"number"`
-- `"string"`
 - `"date"` &ndash; expects a `new Date(..)` compatible date string
-- `"list"` &ndash; value is split by `","` and written as an `Array` object
+- `"list"` &ndash; expects a `","`-separated value, split and written as 
+	an `Array` object
 
 Type handlers are defined in `Parser.typeHandlers` or can be overwritten
 by `<spec>.typeHandlers`.
@@ -388,12 +391,13 @@ If not set values are written as strings.
 Option value collection mode.
 
 The given handler will be used to _collect_ values passed to multiple 
-occurences of the option and write the result to `<key>`.
+occurrences of the option and write the result to `<key>`.
 
 Supported collection modes:
 - `"list"` &ndash; group values into an `Array` object
 - `"set"` &ndash; group values into a `Set` object
-- `"string"` &ndash; concatinate values into a string
+- `"string"` &ndash; concatenate values into a string
+- `"toggle"` &ndash; toggle option value (bool)
 
 Type handlers are defined in `Parser.valueCollectors` or can be overwritten
 by `<spec>.valueCollectors`.
@@ -402,6 +406,9 @@ by `<spec>.valueCollectors`.
 convert and collect values.
 
 If not set, each subsequent option repetition will overwrite the value.
+
+If `"toggle"` is set the actual value assigned to an option is ignored 
+and can be omitted.
 
 
 #### `<option>.env`
@@ -558,7 +565,7 @@ Default value: `undefined`
 
 
 ##### `<parser>.footer`
-Aditional information.
+Additional information.
 
     <spec>.footer = <string> | <function> | undefined
 
@@ -703,7 +710,7 @@ Remove callback from "event".
 
 #### `<parser>(..)`
 
-Execute the `parser` insatance.
+Execute the `parser` instance.
 
 Run the parser on `process.argv`
 ```
@@ -718,7 +725,7 @@ the script path.
 	-> <result>
 ```
 
-Explicitly pass both a list of args and script path.
+Explicitly pass both a list of arguments and script path.
 ```
 <parser>(<argv>, <main>)
 	-> <result>
