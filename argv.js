@@ -217,17 +217,24 @@ function(name, pre, post){
 // XXX add support for ParserError exception handling...
 // XXX should -help should work for any command? ..not just nested parsers?
 // 		...should we indicate which thinks have more "-help"??
-// XXX might be a good idea to use exceptions for ERROR...
 var Parser =
 module.Parser =
 object.Constructor('Parser', {
-	// XXX should type handlers produce errors???
 	typeHandlers: {
 		int: parseInt,
 		float: parseFloat,	
 		number: function(v){ return new Number(v) },
 		string: function(v){ return v.toString() },
 		date: function(v){ return new Date(v) },
+		list: function(v){ 
+			return v
+				.split(',')
+				.map(function(e){ return e.trim() }) },
+	},
+	valueCollectors: {
+		string: function(v, cur){ return (cur || '') + v },
+		list: function(v, cur){ return (cur || []).concat(v) },
+		set: function(v, cur){ return (cur || new Set()).add(v) },
 	},
 
 }, {
@@ -240,8 +247,6 @@ object.Constructor('Parser', {
 	// NOTE: we only care about differentiating an option from a command
 	// 		here by design...
 	optionInputPattern: /^([+-])\1?([^+-].*|)$/,
-	//optionInputPattern: /^(-)-?(.*)$/,
-	//commandInputPattern: /^([.0-9a-zA-Z*].*)$/,
 	commandInputPattern: /^([^-].*)$/,
 
 
@@ -254,7 +259,7 @@ object.Constructor('Parser', {
 	argv: null,
 	rest: null,
 	unhandled: null,
-	rootValue: null,
+	value: null,
 
 
 	// output...
@@ -360,6 +365,81 @@ object.Constructor('Parser', {
 			...(this[key] ? 
 				[]
 				: ['dead-end'])] },
+
+	// 
+	// 	Get the handler for key and call it...
+	// 	.handle(key, rest, _, value)
+	// 		-> res
+	//
+	// 	Call handler...
+	// 	.handle(handler, rest, key, value)
+	// 		-> res
+	//
+	//
+	// NOTE: this has the same signature as a normal handler with a leading 
+	// 		handler/flag argument.
+	// NOTE: this is designed for calling from within the handler to 
+	// 		delegate option processing to a different option.
+	// 		(see '-?' for a usage example)
+	// NOTE: this will not handle anything outside of handler call
+	handle: function(handler, rest, key, value){
+		// got flag as handler...
+		[key, handler] = 
+			typeof(handler) == typeof('str') ?
+				this.handler(handler)
+			: [key, handler]
+		// run handler...
+		var res = (typeof(handler) == 'function' ?
+				handler
+				: (handler.handler 
+					|| function(...args){
+						return this.handlerDefault(handler, ...args) }))
+			.call(this, 
+				rest, 
+				key,
+				...(value != null ? 
+					[value] 
+					: [])) 
+		// special-case: nested parser -> set results object to .<arg>...
+		if(handler instanceof Parser){
+			res.unhandled
+				&& this.unhandled.splice(this.unhandled.length, 0, ...res.unhandled)
+			this.setHandlerValue(handler, key, res) }
+		return res },
+
+	// set handler value...
+	//
+	// This handles handler.arg and basic name generation...
+	setHandlerValue: function(handler, key, value){
+		handler = handler 
+			|| this.handler(key)[1] 
+			|| {}
+		key = (handler.arg
+				&& handler.arg
+					.split(/\|/)
+					.pop()
+					.trim())
+			// get the final key...
+			|| this.handler(key)[0].slice(1)
+		// if value not given set true and handle...
+		//this[key] = arguments.length < 3 ?
+		value = arguments.length < 3 ?
+			(this.handleArgumentValue ?
+				this.handleArgumentValue(handler, true)
+				: true)
+			: value
+		var collect = 
+			typeof(handler.collect) == 'function' ?
+				handler.collect
+				: (this.valueCollectors 
+					|| this.constructor.valueCollectors 
+					|| {})[handler.collect]
+
+		this[key] = collect ?
+			collect.call(this, value, this[key])
+			: value
+
+		return this },
 
 
 	// Builtin options/commands and their configuration...
@@ -536,6 +616,11 @@ object.Constructor('Parser', {
 				.flat()
 				.join('\n')))
 			return module.STOP }},
+	// alias for convenience (not documented)...
+	'-?': {
+		doc: false,
+		handler: function(){
+			return this.handle('-help', ...arguments) } },
 
 
 	// Version...
@@ -590,20 +675,7 @@ object.Constructor('Parser', {
 	//
 	// This is called when .handler is not set...
 	handlerDefault: function(handler, rest, key, value){
-		key = (handler.arg
-				&& handler.arg
-					.split(/\|/)
-					.pop()
-					.trim())
-			// get the final key...
-			|| this.handler(key)[0].slice(1)
-		// if value not given set true and handle...
-		this[key] = arguments.length < 4 ?
-			(this.handleArgumentValue ?
-				this.handleArgumentValue(handler, true)
-				: true)
-			: value
-		return this },
+		return this.setHandlerValue(handler, ...[...arguments].slice(2)) },
 
 
 	// Handle argument value conversion...
@@ -703,9 +775,6 @@ object.Constructor('Parser', {
 			parsed.error(reason, arg, rest)
 			parsed.handleErrorExit
 				&& parsed.handleErrorExit(arg, reason) }
-		var defaultHandler = function(handler){
-			return function(...args){
-				return parsed.handlerDefault(handler, ...args) } }
 		var runHandler = function(handler, arg, rest){
 			var [arg, value] = arg instanceof Array ?
 				arg
@@ -731,24 +800,7 @@ object.Constructor('Parser', {
 				return module.ERROR }
 
 			// run handler...
-			var res = (typeof(handler) == 'function' ?
-					handler
-					: (handler.handler 
-						|| defaultHandler(handler)))
-				// XXX should we pass unhandled explicitly???
-				// 		...if yes then we do not need to splice it back in below...
-				.call(parsed, 
-					rest, 
-					arg,
-					...(value != null ? 
-						[value] 
-						: []))
-
-			// add nested parser result parsed...
-			// XXX should this be done also for .STOP / .ERROR / ... ???
-			if(handler instanceof Parser){
-				parsed.unhandled.splice(parsed.unhandled.length, 0, ...res.unhandled)
-				parsed.handlerDefault(handler, rest, arg, res) }
+			var res = parsed.handle(handler, rest, arg, value)
 
 			res === module.STOP
 				&& parsed.stop(arg, rest)
@@ -861,7 +913,7 @@ object.Constructor('Parser', {
 				parsed.handleArgumentValue(parsed, root_value)
 				: root_value
 		root_value
-			&& (parsed.rootValue = root_value)
+			&& (parsed.value = root_value)
 
 		parsed.then(unhandled, root_value, rest) 
 		return parsed },

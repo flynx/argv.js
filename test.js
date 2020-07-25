@@ -57,6 +57,14 @@ argv.Parser({
 			default: 333,
 		},
 
+		'-c': '-collection',
+		'-collection': {
+			doc: 'collection option',
+			arg: 'ELEM | elems',
+			collect: 'set',
+		},
+
+
 		'-test': argv.Parser({
 			env: 'TEST',
 			arg: 'TEST',
@@ -80,6 +88,11 @@ argv.Parser({
 				console.log('NESTED NESTED DONE', ...arguments)}),
 		}).then(function(){
 			console.log('NESTED DONE', ...arguments) }),
+
+		'-n': {
+			doc: 'proxy to nested',
+			handler: function(){
+				return this.handle('nested', ...arguments) }, },
 
 		'-\\*': {
 			handler: function(){
@@ -240,8 +253,8 @@ p(['test', '-h'])
 
 typeof(__filename) != 'undefined'
 	&& __filename == (require.main || {}).filename
-	//&& console.log(p())
-	&& console.log(lang())
+	&& console.log(p())
+	//&& console.log(lang())
 
 
 

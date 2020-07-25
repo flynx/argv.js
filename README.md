@@ -323,6 +323,8 @@ further parsing and/or execution.
 
 Option/command documentation string used in `-help`.
 
+If this is set to `false` the option will be hidden from `-help`.
+
 
 #### `<option>.priority`
 
