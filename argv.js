@@ -37,6 +37,18 @@ module.ERROR =
 	{doc: 'option processing error, triggers .error(..) handlers'}
 
 
+module.ParserError = 
+	object.Constructor('ParserError', Error, {
+		// NOTE: I do not get why JavaScript's Error implements this 
+		// 		statically...
+		get name(){
+			return this.constructor.name }, })
+module.ParserTypeError = 
+	object.Constructor('ParserTypeError', module.ParserError, {})
+module.ParserValueError = 
+	object.Constructor('ParserValueError', module.ParserError, {})
+
+
 
 //---------------------------------------------------------------------
 // Helpers...
@@ -215,20 +227,18 @@ function(name, pre, post){
 // 		will think about it when we need this feature more than once...
 //
 // XXX should type handlers produce errors???
-// XXX add support for ParserError exception handling...
 // XXX should -help work for any command? ..not just nested parsers?
 // 		...should we indicate which thinks have more "-help"??
-
-
-
 var Parser =
 module.Parser =
 object.Constructor('Parser', {
-	// Signature:
 	//
 	// 	handler(value, ...options)
 	// 		-> value
 	//
+	// NOTE: options are passed to the definition in the option handler, 
+	// 		i.e. the list of values separated by '|' after the type 
+	// 		definition.
 	typeHandlers: {
 		string: function(v){ return v.toString() },
 		bool: function(v){ return !!v },
@@ -242,11 +252,11 @@ object.Constructor('Parser', {
 				.map(function(e){ return e.trim() }) },
 	},
 
-	// Signature:
-	//
+	// 
 	// 	handler(value, stored_value, key, ...options)
 	// 		-> stored_value
 	//
+	// For more info see docs for .typeHandlers
 	valueCollectors: {
 		// format: 'string' | 'string|<separator>'
 		string: function(v, cur, _, sep){ 
@@ -290,7 +300,6 @@ object.Constructor('Parser', {
 	// 		...
 	// 	]
 	//
-	// XXX do we need to output <doc> here???
 	options: function(...prefix){
 		var that = this
 		prefix = prefix.length == 0 ?
@@ -824,6 +833,9 @@ object.Constructor('Parser', {
 
 		// helpers...
 		var handleError = function(reason, arg, rest){
+			reason = reason instanceof Error ?
+				[reason.name, reason.message].join(': ')
+				: reason
 			parsed.error(reason, arg, rest)
 			parsed.handleErrorExit
 				&& parsed.handleErrorExit(arg, reason) }
@@ -851,11 +863,24 @@ object.Constructor('Parser', {
 				parsed.printError('value missing:', arg+'=?')
 				return module.ERROR }
 
-			// run handler...
-			var res = parsed.handle(handler, rest, arg, value)
+			try {
+				// run handler...
+				var res = parsed.handle(handler, rest, arg, value)
 
+			} catch(err){
+				// re-throw the error...
+				// NOTE: do not like that this can mask the location of 
+				// 		the original error.
+				if(!(err instanceof module.ParserError)){
+					throw err } 
+				res = err }
+
+			// NOTE: we also need to handle the errors passed to us from 
+			// 		nested parsers...
 			res === module.STOP
 				&& parsed.stop(arg, rest)
+			res instanceof module.ParserError
+				&& handleError(res, arg, rest)
 			res === module.ERROR
 				&& handleError('unknown', arg, rest)
 			return res }
@@ -924,7 +949,9 @@ object.Constructor('Parser', {
 				var res = runHandler(handler, arg, rest)
 
 				// handle stop conditions...
-				if(res === module.STOP || res === module.ERROR){
+				if(res === module.STOP 
+						|| res === module.ERROR 
+						|| res instanceof module.ParserError){
 					return nested ?
 						res
 						: parsed }

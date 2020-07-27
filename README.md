@@ -54,6 +54,8 @@ This code is an evolution of that parser.
 	- [Contents](#contents)
 	- [Installation](#installation)
 	- [Basic usage](#basic-usage)
+	- [Error reporting](#error-reporting)
+	- [XXX add subsections by task](#xxx-add-subsections-by-task)
 	- [Configuration](#configuration)
 		- [Option/command configuration](#optioncommand-configuration)
 			- [`<option>.handler(..)`](#optionhandler)
@@ -83,10 +85,11 @@ This code is an evolution of that parser.
 		- [Nested parsers](#nested-parsers)
 	- [Components and API](#components-and-api)
 		- [`THEN`, `STOP` and `ERROR`](#then-stop-and-error)
+		- [`ParserError(..)`](#parsererror)
 		- [`Parser(..)`](#parser)
 			- [`<parser>.then(..)`](#parserthen)
 			- [`<parser>.stop(..)`](#parserstop)
-			- [`<parser>.error(..)`](#parsererror)
+			- [`<parser>.error(..)`](#parsererror-1)
 			- [`<parser>.off(..)`](#parseroff)
 			- [`<parser>(..)`](#parser-1)
 	- [Advanced parser API](#advanced-parser-api)
@@ -227,6 +230,17 @@ $ ./script.js nested -h
 $ ./script.js -fb
 
 ```
+
+## Error reporting
+
+XXX
+
+## XXX add subsections by task
+
+XXX
+
+XXX might be a good idea to split out the rest to a INDETAIL.md or similar...
+
 
 ## Configuration
 
@@ -686,6 +700,17 @@ Values that if returned by option/command handlers can control the parse flow.
   skipping `<parser>.then(..)`.
 - `ERROR` &ndash; Stop parsing, call `<parser>.error(..)` callbacks and
   exit with an error.
+
+### `ParserError(..)` 
+
+A base error constructor, if an instance of `ParseError` is thrown by the 
+handler it has the same effect as returning `ERROR` with one difference being
+that the error `.name`/`.message` will get printed.
+
+The following error constructors are also defined:
+- `ParserTypeError(..)`
+- `ParserValueError(..)`
+
 
 ### `Parser(..)` 
 

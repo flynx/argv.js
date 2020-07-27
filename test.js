@@ -17,6 +17,10 @@ var argv = require('./argv')
 //---------------------------------------------------------------------
 
 
+argv.Parser.typeHandlers.error = function(){
+	throw new argv.ParserTypeError('type error') }
+
+
 var p = 
 module.p =
 argv.Parser({
@@ -78,6 +82,15 @@ argv.Parser({
 		//'-a': '-ab',
 		'-sh': {
 			doc: 'short option', },
+
+		'-type-error': {
+			doc: 'throw an type error',
+			type: 'error', 
+		},
+		'-error': {
+			doc: 'throw an error',
+			handler: function(){
+				throw argv.ParserError('error') }},
 
 
 		'-test': argv.Parser({
