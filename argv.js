@@ -43,6 +43,7 @@ module.ParserError =
 		// 		statically...
 		get name(){
 			return this.constructor.name }, })
+
 module.ParserTypeError = 
 	object.Constructor('ParserTypeError', module.ParserError, {})
 module.ParserValueError = 
@@ -215,18 +216,8 @@ function(name, pre, post){
 // 		is handled as an option, no matter what the prefix, so different 
 // 		prefixes can be handled by the handler by checking the key argument.
 // 		currently both '-' and '+' are supported.
-//
 // NOTE: essentially this parser is a very basic stack language...
 //
-//
-// XXX FEATURE (DELAYED): handle <scriptName>-<command> script calls...
-// XXX FEATURE (DELAYED): read metadata from package.json...
-// 		...not clear which package json to get, needs more thought...
-// XXX FEATURE (DELAYED): handle multiple values per flag...
-// 		...manually this is trivial, automating it would complicate things,
-// 		will think about it when we need this feature more than once...
-//
-// XXX should type handlers produce errors???
 // XXX should -help work for any command? ..not just nested parsers?
 // 		...should we indicate which thinks have more "-help"??
 var Parser =
@@ -270,7 +261,7 @@ object.Constructor('Parser', {
 
 }, {
 	// config...
-	splitOptions: true,
+	//
 	optionPrefix: '-',
 	commandPrefix: '@',
 	// NOTE: this must contain two goups the first is the prefix and the 
@@ -279,6 +270,8 @@ object.Constructor('Parser', {
 	// 		here by design...
 	optionInputPattern: /^([+-])\1?([^+-].*|)$/,
 	commandInputPattern: /^([^-].*)$/,
+
+	splitOptions: true,
 
 	// instance stuff...
 	// XXX do we need all three???
@@ -454,6 +447,12 @@ object.Constructor('Parser', {
 	//             \
 	//              +----------------------- .helpShortOptionSize (2 chars)
 	//
+	//
+	// NOTE: no effort was made to handle ALL cases gracefully, but in 
+	// 		the most common cases this should work quite fine.
+	// 		common cases:
+	// 			- 1-2 flag variants (short/long) per flag
+	// 			- short-ish flag descriptions
 	helpColumnOffset: 3,
 	helpShortOptionSize: 2,
 	helpColumnPrefix: '- ',
