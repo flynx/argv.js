@@ -398,8 +398,13 @@ occurrences of the option and write the result to `<key>`.
 Supported collection modes:
 - `"list"` &ndash; group values into an `Array` object
 - `"set"` &ndash; group values into a `Set` object
-- `"string"` &ndash; concatenate values into a string
-- `"toggle"` &ndash; toggle option value (bool)
+- `"string"` &ndash; concatenate values into a string.  
+  This also supports an optional separator, for example `"string|\t"` will 
+  collect values into a string joining them with a tab (i.e. `"\t"`).  
+  Default separator is: `" "`
+- `"toggle"` &ndash; toggle option value (bool).  
+  Note that the actual value assigned to an option is ignored here and can
+  be omitted.
 
 Type handlers are defined in `Parser.valueCollectors` or can be overwritten
 by `<spec>.valueCollectors`.
@@ -407,10 +412,7 @@ by `<spec>.valueCollectors`.
 `<option>.collect` can be used in conjunction with `<option>.type` to both 
 convert and collect values.
 
-If not set, each subsequent option repetition will overwrite the value.
-
-If `"toggle"` is set the actual value assigned to an option is ignored 
-and can be omitted.
+If not set, each subsequent option will overwrite the previously set value.
 
 
 #### `<option>.env`

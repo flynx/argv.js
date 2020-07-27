@@ -128,6 +128,8 @@ function(name, pre, post){
 //
 //			type: 'int',
 //
+//			collect: 'string|, ',
+//
 //			env: 'VALUE',
 //
 //			default: 123,
@@ -203,7 +205,6 @@ function(name, pre, post){
 // 		currently both '-' and '+' are supported.
 //
 // NOTE: essentially this parser is a very basic stack language...
-// 		XXX can we implement the whole thing directly as a stack language???
 //
 //
 // XXX FEATURE (DELAYED): handle <scriptName>-<command> script calls...
@@ -215,8 +216,11 @@ function(name, pre, post){
 //
 // XXX should type handlers produce errors???
 // XXX add support for ParserError exception handling...
-// XXX should -help should work for any command? ..not just nested parsers?
+// XXX should -help work for any command? ..not just nested parsers?
 // 		...should we indicate which thinks have more "-help"??
+
+
+
 var Parser =
 module.Parser =
 object.Constructor('Parser', {
@@ -232,10 +236,15 @@ object.Constructor('Parser', {
 				.split(',')
 				.map(function(e){ return e.trim() }) },
 	},
+
 	valueCollectors: {
-		string: function(v, cur){ return (cur || '') + v },
+		// format: 'string' | 'string|<separator>'
+		string: function(v, cur, sep){ 
+			return [...(cur ? [cur] : []), v]
+				.join(sep || '') },
 		list: function(v, cur){ return (cur || []).concat(v) },
 		set: function(v, cur){ return (cur || new Set()).add(v) },
+		// NOTE: this will ignore the actual value given...
 		toggle: function(v, cur){ return !cur },
 	},
 
@@ -251,7 +260,6 @@ object.Constructor('Parser', {
 	optionInputPattern: /^([+-])\1?([^+-].*|)$/,
 	commandInputPattern: /^([^-].*)$/,
 
-
 	// instance stuff...
 	// XXX do we need all three???
 	script: null,
@@ -264,17 +272,7 @@ object.Constructor('Parser', {
 	value: null,
 
 
-	// output...
-	//
-	print: afterCallback('print', null, function(...args){
-		console.log(...args)
-		return this }),
-	printError: afterCallback('print_error', null, function(...args){
-		console.error(this.scriptName+': Error:', ...args)
-		return this }),
-
-
-	// Handler API...
+	// Handler iterators...
 	//
 	// Format:
 	// 	[
@@ -336,10 +334,14 @@ object.Constructor('Parser', {
 				return handler.required }) },
 	commands: function(){
 		return this.options(this.commandPrefix) },
+
 	isCommand: function(str){
 		return this.commandInputPattern.test(str) 
 			&& ((this.commandPrefix + str) in this 
 				|| this['@*']) },
+
+	// Get handler...
+	//
 	// NOTE: this ignores any arguments values present in the key...
 	// NOTE: this ignores options forming alias loops and dead-end 
 	// 		options...
@@ -368,6 +370,7 @@ object.Constructor('Parser', {
 				[]
 				: ['dead-end'])] },
 
+	// Trigger the handler...
 	// 
 	// 	Get the handler for key and call it...
 	// 	.handle(key, rest, _, value)
@@ -409,41 +412,8 @@ object.Constructor('Parser', {
 			this.setHandlerValue(handler, key, res) }
 		return res },
 
-	// set handler value...
-	//
-	// This handles handler.arg and basic name generation...
-	setHandlerValue: function(handler, key, value){
-		handler = handler 
-			|| this.handler(key)[1] 
-			|| {}
-		key = (handler.arg
-				&& handler.arg
-					.split(/\|/)
-					.pop()
-					.trim())
-			// get the final key...
-			|| this.handler(key)[0].slice(1)
-		// if value not given set true and handle...
-		//this[key] = arguments.length < 3 ?
-		value = arguments.length < 3 ?
-			(this.handleArgumentValue ?
-				this.handleArgumentValue(handler, true)
-				: true)
-			: value
-		var collect = 
-			typeof(handler.collect) == 'function' ?
-				handler.collect
-				: (this.valueCollectors 
-					|| this.constructor.valueCollectors 
-					|| {})[handler.collect]
 
-		this[key] = collect ?
-			collect.call(this, value, this[key])
-			: value
-
-		return this },
-
-
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	// Builtin options/commands and their configuration...
 	
 	// Help...
@@ -672,12 +642,80 @@ object.Constructor('Parser', {
 	'@*': '-*',
 	
 
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+	// Output...
+	//
+	print: afterCallback('print', null, function(...args){
+		console.log(...args)
+		return this }),
+	printError: afterCallback('print_error', null, function(...args){
+		console.error(this.scriptName+': Error:', ...args)
+		return this }),
+
+
+	// Handle value via this/parent value handlers... (helper)
+	//
+	// Expected attr format:
+	//
+	// 	option_handler[attr] = '<handler-name>' | '<handler-name>|<arg>|...'
+	//
+	//
+	// This will call the handler in this context with the following 
+	// signature:
+	//
+	// 	handler(value, ...args, ...sargs)
+	//
+	// Where sargs is the list of arguments defined in attr via '|'.
+	//
+	// For an example see: .handleArgumentValue(..) and .setHandlerValue(..)
+	_handleValue: function(handler, attr, handlers, value, ...args){
+		var [h, ...sargs] = 
+			typeof(handler[attr]) == typeof('str') ?
+				handler[attr].split(/\|/)
+				: []
+		var func = 
+			typeof(handler[attr]) == 'function' ?
+				handler[attr]
+				: (this[handlers] 
+					|| this.constructor[handlers]
+					|| {})[h]
+		return func ?
+			func.call(this, value, ...args, ...sargs)
+			: value },
+
+	// Set handler value... (helper)
+	//
+	// This handles handler.arg and basic name generation...
+	setHandlerValue: function(handler, key, value){
+		handler = handler 
+			|| this.handler(key)[1] 
+			|| {}
+		key = (handler.arg
+				&& handler.arg
+					.split(/\|/)
+					.pop()
+					.trim())
+			// get the final key...
+			|| this.handler(key)[0].slice(1)
+		// if value not given set true and handle...
+		//this[key] = arguments.length < 3 ?
+		value = arguments.length < 3 ?
+			(this.handleArgumentValue ?
+				this.handleArgumentValue(handler, true)
+				: true)
+			: value
+
+		this[key] = this._handleValue(handler, 'collect', 'valueCollectors', value, this[key])
+
+		return this },
+
+
 	// Default handler action...
 	//
 	// This is called when .handler is not set...
 	handlerDefault: function(handler, rest, key, value){
 		return this.setHandlerValue(handler, ...[...arguments].slice(2)) },
-
 
 	// Handle argument value conversion...
 	//
@@ -686,15 +724,7 @@ object.Constructor('Parser', {
 	// NOTE: to disable this functionality just set:
 	//			handleArgumentValue: false
 	handleArgumentValue: function(handler, value){
-		var convert = 
-			typeof(handler.type) == 'function' ?
-				handler.type
-				: (this.typeHandlers 
-					|| this.constructor.typeHandlers 
-					|| {})[handler.type]
-		return convert ?
-			convert.call(this, value)
-			: value },
+		return this._handleValue(handler, 'type', 'typeHandlers', value) },
 
 	// Handle error exit...
 	//

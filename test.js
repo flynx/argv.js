@@ -69,6 +69,12 @@ argv.Parser({
 			arg: '| toggle',
 			collect: 'toggle',
 		},
+		'-s': '-string',
+		'-string': {
+			doc: 'collect STR',
+			arg: 'STR | str',
+			collect: 'string|\t',
+		},
 
 
 		'-test': argv.Parser({
