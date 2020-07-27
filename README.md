@@ -212,7 +212,7 @@ var parser = argv.Parser({
 	})
 ```
 
-This will create a parser that supports the folowing:
+This will create a parser that supports the following:
 ```shell
 $ ./script.js --help 
 
@@ -263,10 +263,10 @@ The `<parser>` expects/handles the following data in the `<spec>` object:
 - option/command aliases  
 	An alias is an option/command key with a _string_ value.  
 	That value _references_ a different option or command, i.e. is an 
-	option/commnad name.
+	option/command name.
 
 	Looping (referencing the original alias) or dead-end (referencing 
-	non-existant options) aliases are ignored.
+	non-existent options) aliases are ignored.
 
 
 ### Option/command configuration
@@ -337,9 +337,9 @@ Option/command priority in the `-help`.
 Can be a positive or negative number or `undefined`.
 
 Ordering is as follows:
-- options in decending positive `.priority`,
+- options in descending positive `.priority`,
 - options with undefined `.priority` in order of definition,
-- options in decending negative `.priority`.
+- options in descending negative `.priority`.
 
 Note that options and commands are grouped separately.
 
@@ -353,13 +353,13 @@ arg: '<arg-name>'
 arg: '<arg-name> | <key>'
 ```
 
-If defined and no explicit value is passed to the option comand (via `=`)
+If defined and no explicit value is passed to the option command (via `=`)
 then the _parser_ will consume the directly next non-option if present in
 `argv` as a value, passing it to the `<option>.type` handler, if defined,
 then the `<option>.handler(..)`, if defined, or setting it to `<key>`
 otherwise.
 
-Sets the option/command arument name given in `-help` for the option
+Sets the option/command argument name given in `-help` for the option
 and the key where the value will be written.
 
 The `<key>` is not used if `<option>.handler(..)` is defined.
@@ -379,13 +379,39 @@ Supported types:
 - `"float"`
 - `"number"`
 - `"date"` &ndash; expects a `new Date(..)` compatible date string
-- `"list"` &ndash; expects a `","`-sparated value, split and written as 
+- `"list"` &ndash; expects a `","`-separated value, split and written as 
 	an `Array` object
 
 Type handlers are defined in `Parser.typeHandlers` or can be overwritten
 by `<spec>.typeHandlers`.
 
 If not set values are written as strings. 
+
+Defining a new global type handler:
+```javascript
+// check if a value is email-compatible...
+argv.Parser.typeHandlers.email = function(value, ...options){
+	if(!/[a-zA-Z][a-zA-Z.-]*@[a-zA-Z.-]+/.test(value)){
+		throw new TypeRrror('email: format error:', value) }
+	return value }
+```
+
+Defining a local to parser instance type handler:
+```javascript
+var parser = new Parser({
+	// Note that inheriting from the global type handlers is required 
+	// only if one needs to use the global types, otherwise just setting
+	// a bare object is enough...
+	typeHandlers: Object.assign(Object.create(Parser.typeHandlers), {
+		email: function(value, ...options){
+			// ...
+		},
+		// ...
+	}),
+
+	// ...
+})
+```
 
 
 #### `<option>.collect`
@@ -414,6 +440,19 @@ convert and collect values.
 
 If not set, each subsequent option will overwrite the previously set value.
 
+Defining a global value collector:
+```javascript
+// '+' prefixed flags will add values to set while '-' prefixed flag will 
+// remove value from set...
+argv.Parser.valueCollectors.Set = function(value, current, key){ 
+	current = current || new Set()
+	return key[0] != '-' ?
+		current.add(value) 
+		: (cur.delete(value), current) }
+```
+
+Defining handlers local to a parser instance handler is the same as for 
+[type handlers](#optiontype) above.
 
 #### `<option>.env`
 
@@ -514,7 +553,7 @@ will get replaced with appropriate values when rendering help.
 
 These values are set by the parser just before parsing starts:
 - `.script` - full script path, usually this is the value of `argv[0]`,
-- `.scriptName` - basename of the script,
+- `.scriptName` - base name of the script,
 - `.scriptPath` - path of the script.
 
 These will be overwritten when the parser is called.
@@ -569,7 +608,8 @@ Default value: `undefined`
 
 
 ##### `<parser>.footer`
-Aditional information.
+
+Additional information.
 
     <spec>.footer = <string> | <function> | undefined
 
@@ -714,7 +754,7 @@ Remove callback from "event".
 
 #### `<parser>(..)`
 
-Execute the `parser` insatance.
+Execute the `parser` instance.
 
 Run the parser on `process.argv`
 ```
@@ -729,7 +769,7 @@ the script path.
 	-> <result>
 ```
 
-Explicitly pass both a list of args and script path.
+Explicitly pass both a list of arguments and script path.
 ```
 <parser>(<argv>, <main>)
 	-> <result>

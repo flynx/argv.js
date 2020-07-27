@@ -224,6 +224,11 @@ function(name, pre, post){
 var Parser =
 module.Parser =
 object.Constructor('Parser', {
+	// Signature:
+	//
+	// 	handler(value, ...options)
+	// 		-> value
+	//
 	typeHandlers: {
 		string: function(v){ return v.toString() },
 		bool: function(v){ return !!v },
@@ -237,9 +242,14 @@ object.Constructor('Parser', {
 				.map(function(e){ return e.trim() }) },
 	},
 
+	// Signature:
+	//
+	// 	handler(value, stored_value, key, ...options)
+	// 		-> stored_value
+	//
 	valueCollectors: {
 		// format: 'string' | 'string|<separator>'
-		string: function(v, cur, sep){ 
+		string: function(v, cur, _, sep){ 
 			return [...(cur ? [cur] : []), v]
 				.join(sep || '') },
 		list: function(v, cur){ return (cur || []).concat(v) },
@@ -700,7 +710,7 @@ object.Constructor('Parser', {
 		handler = handler 
 			|| this.handler(key)[1] 
 			|| {}
-		key = (handler.arg
+		var attr = (handler.arg
 				&& handler.arg
 					.split(/\|/)
 					.pop()
@@ -715,7 +725,9 @@ object.Constructor('Parser', {
 				: true)
 			: value
 
-		this[key] = this._handleValue(handler, 'collect', 'valueCollectors', value, this[key])
+		this[attr] = this._handleValue(handler, 
+			'collect', 'valueCollectors', 
+			value, this[attr], key)
 
 		return this },
 
