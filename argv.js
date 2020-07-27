@@ -253,7 +253,7 @@ object.Constructor('Parser', {
 
 
 	// instance stuff...
-	// XXX dp we need all three???
+	// XXX do we need all three???
 	script: null,
 	scriptNmae: null,
 	scriptPath: null,
@@ -644,8 +644,7 @@ object.Constructor('Parser', {
 	// context will be returned to the parent context, effectively 
 	// stopping the nested context and letting the parent continue.
 	//
-	// XXX should we be able to force the parent/root to also stop???
-	// 		...this can be done by pushing '-' to the rest's head...
+	// NOTE: to stop the parent parser push '-' to rest's head...
 	'-': {
 		doc: 'stop processing arguments after this point',
 		handler: function(){

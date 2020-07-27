@@ -94,6 +94,8 @@ This code is an evolution of that parser.
 		- [`<parser>.handlerDefault(..)`](#parserhandlerdefault)
 		- [`<parser>.handleArgumentValue(..)`](#parserhandleargumentvalue)
 		- [`<parser>.handleErrorExit(..)`](#parserhandleerrorexit)
+		- [`<parser>.handle(..)`](#parserhandle)
+		- [`<parser>.setHandlerValue(..)`](#parsersethandlervalue)
 		- [More...](#more)
 	- [License](#license)
 
@@ -210,7 +212,7 @@ var parser = argv.Parser({
 	})
 ```
 
-This will create a parser that supports the following:
+This will create a parser that supports the folowing:
 ```shell
 $ ./script.js --help 
 
@@ -261,10 +263,10 @@ The `<parser>` expects/handles the following data in the `<spec>` object:
 - option/command aliases  
 	An alias is an option/command key with a _string_ value.  
 	That value _references_ a different option or command, i.e. is an 
-	option/command name.
+	option/commnad name.
 
 	Looping (referencing the original alias) or dead-end (referencing 
-	non-existent options) aliases are ignored.
+	non-existant options) aliases are ignored.
 
 
 ### Option/command configuration
@@ -335,9 +337,9 @@ Option/command priority in the `-help`.
 Can be a positive or negative number or `undefined`.
 
 Ordering is as follows:
-- options in descending positive `.priority`,
+- options in decending positive `.priority`,
 - options with undefined `.priority` in order of definition,
-- options in descending negative `.priority`.
+- options in decending negative `.priority`.
 
 Note that options and commands are grouped separately.
 
@@ -351,13 +353,13 @@ arg: '<arg-name>'
 arg: '<arg-name> | <key>'
 ```
 
-If defined and no explicit value is passed to the option command (via `=`)
+If defined and no explicit value is passed to the option comand (via `=`)
 then the _parser_ will consume the directly next non-option if present in
 `argv` as a value, passing it to the `<option>.type` handler, if defined,
 then the `<option>.handler(..)`, if defined, or setting it to `<key>`
 otherwise.
 
-Sets the option/command argument name given in `-help` for the option
+Sets the option/command arument name given in `-help` for the option
 and the key where the value will be written.
 
 The `<key>` is not used if `<option>.handler(..)` is defined.
@@ -377,7 +379,7 @@ Supported types:
 - `"float"`
 - `"number"`
 - `"date"` &ndash; expects a `new Date(..)` compatible date string
-- `"list"` &ndash; expects a `","`-separated value, split and written as 
+- `"list"` &ndash; expects a `","`-sparated value, split and written as 
 	an `Array` object
 
 Type handlers are defined in `Parser.typeHandlers` or can be overwritten
@@ -565,7 +567,7 @@ Default value: `undefined`
 
 
 ##### `<parser>.footer`
-Additional information.
+Aditional information.
 
     <spec>.footer = <string> | <function> | undefined
 
@@ -710,7 +712,7 @@ Remove callback from "event".
 
 #### `<parser>(..)`
 
-Execute the `parser` instance.
+Execute the `parser` insatance.
 
 Run the parser on `process.argv`
 ```
@@ -725,7 +727,7 @@ the script path.
 	-> <result>
 ```
 
-Explicitly pass both a list of arguments and script path.
+Explicitly pass both a list of args and script path.
 ```
 <parser>(<argv>, <main>)
 	-> <result>
@@ -793,6 +795,38 @@ By default this will call process.exit(1) for the _root parser_ and does
 nothing for _nested parsers_.
 
 If set to `false` the _parser_ will simply return like any normal function.
+
+
+### `<parser>.handle(..)`
+
+Manually trigger `<arg>` handling.
+```
+<parser>.handle(<arg>, <rest>, <key>, <value>)
+	-> <res>
+```
+
+This is intended to be used for delegating handling from one handler to 
+another. Note that this does not handle errors or other protocols handled
+by `<parser>(..)`, this only calls the `<arg>` handler (or if it was not 
+defined the _default handler_) so it is not recommended for this to be 
+called from outside an option handler method/function.
+
+This is not intended for overloading.
+
+
+### `<parser>.setHandlerValue(..)`
+
+Set handler value manually, this uses `<handler>.arg` and if not set `<key>` to 
+write `<value>` on the _parsed_ object.
+```
+<parser>.setHandlerValue(<handler>, <key>, <value>)
+	-> <parser>
+```
+
+This is useful when extending `argv.js`, for client code values can be set 
+directly.
+
+This is not intended for overloading.
 
 
 ### More...
