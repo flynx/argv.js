@@ -424,17 +424,19 @@ object.Constructor('Parser', {
 	//                      /
 	//      |<------+-------+------>|
 	//   
-	//      -o, --option=VALUE      - option doc
+	//      -o,  --option=VALUE     - option doc
 	//        __        _           __
-	//          \        \            \
-	//           \        \            +---- .helpColumnPrefix ('- ')
-	//            \        \
-	//             \        +--------------- .helpValueSeparator ('=')
-	//              \
-	//               +---------------------- .helpArgumentSeparator (', ')
+	//       _  \        \            \
+	//        \  \        \            +---- .helpColumnPrefix ('- ')
+	//         \  \        \
+	//          \  \        +--------------- .helpValueSeparator ('=')
+	//           \  \
+	//            \  +---------------------- .helpArgumentSeparator (', ')
+	//             \
+	//              +----------------------- .helpShortOptionSize (2 chars)
 	//
-	// doc config...
 	helpColumnOffset: 3,
+	helpShortOptionSize: 2,
 	helpColumnPrefix: '- ',
 	helpArgumentSeparator: ', ',
 	helpValueSeparator: '=',
@@ -471,7 +473,8 @@ object.Constructor('Parser', {
 		priority: 99,
 		handler: function(argv, key, value){
 			var that = this
-			var sep = this.helpArgumentSeparator
+			var sep = this.helpArgumentSeparator || ', '
+			var short = this.helpShortOptionSize || 1
 			var expandVars = this.expandTextVars.bind(this)
 			var formDoc = function(doc, handler){
 				var info = [
@@ -529,14 +532,20 @@ object.Constructor('Parser', {
 										.sort(function(a, b){ 
 											return a.length - b.length})
 										// form: "-x, --xx"
-										.map(function(o, i){
-											return o.length <= 2 ? 
+										.map(function(o, i, l){
+											return o.length <= 1 + short ? 
 													o 
 												// no short options -> offset first long option...
 												: i == 0 ?
-													' '.repeat(sep.length + 2) +'-'+ o
+													' '.repeat(1 + short + sep.length) +'-'+ o
+												// short option shorter than 1 + short 
+												// 		-> offset first long option by difference...
+												: i == 1 ?
+													' '.repeat(1 + short - l[0].length || 0) +'-'+ o
 												// add extra '-' to long options...
-												: '-'+ o })
+												: o.length > short ?
+													'-'+ o 
+												: o })
 										.join(sep),
 										...(arg ? 
 											[arg] 

@@ -75,6 +75,9 @@ argv.Parser({
 			arg: 'STR | str',
 			collect: 'string|\t',
 		},
+		//'-a': '-ab',
+		'-sh': {
+			doc: 'short option', },
 
 
 		'-test': argv.Parser({
