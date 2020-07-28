@@ -484,8 +484,8 @@ object.Constructor('Parser', {
 			.replace(/\$VERSION/g, this.version || '0.0.0')
 			.replace(/\$SCRIPTNAME/g, this.scriptName) },
 
-	'-h': '-help',
 	// NOTE: this will set .quiet to false...
+	'-h': '-help',
 	'-help': {
 		doc: 'print this message and exit',
 		priority: 99,
@@ -627,6 +627,7 @@ object.Constructor('Parser', {
 
 	// Version...
 	//
+	// NOTE: this will set .quiet to false...
 	version: undefined,
 
 	'-v': '-version',
@@ -634,19 +635,24 @@ object.Constructor('Parser', {
 		doc: 'show $SCRIPTNAME verion and exit',
 		priority: 99,
 		handler: function(){
+			this.quiet = false
 			this.print(this.version || '0.0.0')
 			return module.STOP }, },
 
 
 	// Quiet mode...
 	//
+	quiet: undefined,
+
 	'-q': '-quiet',
 	'-quiet': {
 		priority: 99,
 		doc: 'quiet mode', },
 
 
-	// Stop processing arguments and continue into .then(..) handlers...
+	// Stop argument processing...
+	//
+	// This will trigger .then(..) handlers...
 	//
 	// If .then(..) does not handle rest in the nested context then this
 	// context will be returned to the parent context, effectively 

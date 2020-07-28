@@ -32,6 +32,7 @@ This code is an evolution of that parser.
 - Reasonable defaults:
   - `-help` &ndash; generate and print help
   - `-version` &ndash; print version
+  - `-quiet` &ndash; suppress printing
   - `-` &ndash; stop argument processing
 - Extensible:
   - Hooks for dynamic option/command handling
@@ -538,7 +539,8 @@ This will turn quiet mode on.
 In quiet mode [`<parser>.print(..)`](#parserprint--parserprinterror) will 
 not print anything.
 
-Passing [`--help`](#-h----help) will disable quiet mode and print normally.
+Passing [`--help`](#-h----help) or [`--version`](#-v----version) will 
+disable quiet mode and print normally.
 
 
 #### `-h` / `--help`
