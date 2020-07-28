@@ -832,6 +832,8 @@ cases, similar to `console.log(..)` and `console.error(..)`
 
 <parser>.printError(...)
 	-> <parser>
+<parser>.printError(<error>, ...)
+	-> <error>
 ```
 
 Both support callback binding:
