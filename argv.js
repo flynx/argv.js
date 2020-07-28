@@ -28,10 +28,10 @@ var object = require('ig-object')
 //---------------------------------------------------------------------
 
 module.STOP = 
-	{doc: 'stop option processing, triggers .stop(..) handlers'}
+	{doc: 'Stop option processing, triggers .stop(..) handlers'}
 
 module.THEN = 
-	{doc: 'break option processing, triggers .then(..) handlers'}
+	{doc: 'Break option processing, triggers .then(..) handlers'}
 
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 

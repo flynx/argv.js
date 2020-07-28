@@ -705,6 +705,13 @@ Values that if returned by option/command handlers can control the parse flow.
   skipping `<parser>.then(..)`.
 
 
+`THEN` is useful when we want to stop option processing and trigger the 
+post-parse stage (i.e. calling `<parser>.then(..)`) for example to pass 
+the rest of the options to some other command.
+
+`STOP` is used for options like `-help` when no post-parsing is needed.
+
+
 ### `ParserError(..)` 
 
 A base error constructor. 
