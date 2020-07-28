@@ -33,9 +33,8 @@ module.STOP =
 module.THEN = 
 	{doc: 'break option processing, triggers .then(..) handlers'}
 
-module.ERROR = 
-	{doc: 'option processing error, triggers .error(..) handlers'}
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 module.ParserError = 
 	object.Constructor('ParserError', Error, {
@@ -664,8 +663,9 @@ object.Constructor('Parser', {
 		doc: false,
 		//section_doc: ...,
 		handler: function(_, key){
-			this.printError('unknown '+ (key.startsWith('-') ? 'option:' : 'command:'), key)
-			return module.ERROR } },
+			return this.printError(
+				module.ParserError(
+					`Unknown ${key.startsWith('-') ? 'option:' : 'command:'} ${ key }`)) } },
 	'@*': '-*',
 	
 
@@ -676,7 +676,18 @@ object.Constructor('Parser', {
 	print: afterCallback('print', null, function(...args){
 		console.log(...args)
 		return this }),
+	//
+	// 	.printError(...)
+	// 		-> this
+	//
+	// 	.printError(error, ...)
+	// 		-> error
+	//
 	printError: afterCallback('print_error', null, function(...args){
+		if(args[0] instanceof module.ParserError){
+			console.error(
+				this.scriptName+':', args[0].name+':', args[0].message, ...args.slice(1))
+			return args[0] }
 		console.error(this.scriptName+': Error:', ...args)
 		return this }),
 
@@ -838,6 +849,12 @@ object.Constructor('Parser', {
 			parsed.error(reason, arg, rest)
 			parsed.handleErrorExit
 				&& parsed.handleErrorExit(arg, reason) }
+		var reportError = function(message, arg, rest){
+			message = message
+				.replace(/$ARG/g, arg)
+			handleError(message, arg, rest)
+			return parsed.printError(
+				module.ParserError(message)) }
 		var runHandler = function(handler, arg, rest){
 			var [arg, value] = arg instanceof Array ?
 				arg
@@ -858,9 +875,7 @@ object.Constructor('Parser', {
 				: value
 			// required value check...
 			if(handler.valueRequired && value == null){
-				handleError('value missing', arg, rest)
-				parsed.printError('value missing:', arg+'=?')
-				return module.ERROR }
+				return reportError('Value missing: $ARG=?', arg, rest) }
 
 			try {
 				// run handler...
@@ -880,8 +895,6 @@ object.Constructor('Parser', {
 				&& parsed.stop(arg, rest)
 			res instanceof module.ParserError
 				&& handleError(res, arg, rest)
-			res === module.ERROR
-				&& handleError('unknown', arg, rest)
 			return res }
 		// NOTE: if successful this needs to modify the arg, thus it 
 		// 		returns both the new first arg and the handler...
@@ -900,8 +913,7 @@ object.Constructor('Parser', {
 				&& r.push(r.pop() +'='+ value) 
 			// push new options back to option "stack"...
 			rest.splice(0, 0, ...r)
-			var handler = parsed.handler(a)[1]
-			return [a, handler] }
+			return [ a, parsed.handler(a)[1] ] }
 
 		// parse/interpret the arguments and call handlers...
 		var values = new Set()
@@ -936,9 +948,7 @@ object.Constructor('Parser', {
 					|| parsed.handler(dfl)[1]
 				// no handler found and '-*' or '@*' not defined...
 				if(handler == null){
-					handleError('unknown', arg, rest)
-					parsed.printError('unknown '+(type == 'opt' ? 'option:' : 'command:'), arg)
-					return module.ERROR }
+					return reportError(`Unknown ${ type == 'opt' ? 'option' : 'command:' } $ARG`, arg, rest) }
 
 				// mark handler...
 				;(handler.env || 'default' in handler)
@@ -949,7 +959,6 @@ object.Constructor('Parser', {
 
 				// handle stop conditions...
 				if(res === module.STOP 
-						|| res === module.ERROR 
 						|| res instanceof module.ParserError){
 					return nested ?
 						res
@@ -981,8 +990,7 @@ object.Constructor('Parser', {
 				.map(function([k, a, d, h]){
 					return k.pop() })
 		if(missing.length > 0){
-			handleError('required', missing, rest)
-			parsed.printError('required but missing:', missing.join(', '))
+			reportError('required but missing: $ARG', missing.join(', '), rest)
 			return parsed }
 
 		// handle root value...

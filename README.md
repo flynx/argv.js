@@ -37,6 +37,7 @@ This code is an evolution of that parser.
   - Hooks for dynamic option/command handling
   - Customizable error and stop condition handling
 
+
 ## Planned Features
 
 - Run `<command>-<sub-command>` scripts
@@ -84,7 +85,7 @@ This code is an evolution of that parser.
 				- [More control over help...](#more-control-over-help)
 		- [Nested parsers](#nested-parsers)
 	- [Components and API](#components-and-api)
-		- [`THEN`, `STOP` and `ERROR`](#then-stop-and-error)
+		- [`THEN`/ `STOP`](#then-stop)
 		- [`ParserError(..)`](#parsererror)
 		- [`Parser(..)`](#parser)
 			- [`<parser>.then(..)`](#parserthen)
@@ -231,15 +232,18 @@ $ ./script.js -fb
 
 ```
 
+
 ## Error reporting
 
 XXX
+
 
 ## XXX add subsections by task
 
 XXX
 
 XXX might be a good idea to split out the rest to a INDETAIL.md or similar...
+
 
 
 ## Configuration
@@ -332,9 +336,9 @@ A _value_ can be passed either explicitly passed (via `=` syntax),
 implicitly parsed from the `argv` via the `<option>.arg` definition or 
 is `undefined` otherwise.
 
-A handler can return one of the `THEN`, `STOP` or `ERROR` to control
-further parsing and/or execution.
-(See: [`THEN`, `STOP` and `ERROR`](#then-stop-and-error) for more info.)
+A handler can return one of the `THEN`, `STOP` or `ParserError` instance 
+to control further parsing and/or execution.
+(See: [`THEN` / `STOP`](#then-stop) for more info.)
 
 
 #### `<option>.doc`
@@ -467,6 +471,7 @@ argv.Parser.valueCollectors.Set = function(value, current, key){
 
 Defining handlers local to a parser instance handler is the same as for 
 [type handlers](#optiontype) above.
+
 
 #### `<option>.env`
 
@@ -691,25 +696,28 @@ See [lang.js](./lang.js) for more fun with argv and programming languages ;)
 
 ## Components and API
 
-### `THEN`, `STOP` and `ERROR`
+### `THEN` / `STOP`
 
 Values that if returned by option/command handlers can control the parse flow.
 
 - `THEN` &ndash; Stop parsing and call `<parser>.then(..)` callbacks.
 - `STOP` &ndash; Stop parsing and call `<parser>.stop(..)` callbacks, 
   skipping `<parser>.then(..)`.
-- `ERROR` &ndash; Stop parsing, call `<parser>.error(..)` callbacks and
-  exit with an error.
+
 
 ### `ParserError(..)` 
 
-A base error constructor, if an instance of `ParseError` is thrown by the 
-handler it has the same effect as returning `ERROR` with one difference being
-that the error `.name`/`.message` will get printed.
+A base error constructor. 
+
+If an instance of `ParseError` is thrown or returned by the handler parsing
+is stopped, `<parsing>.error(..)` is called and then the parser will exit 
+with an error (see: [`<parser>.handleErrorExit(..)`](#parserhandleerrorexit)).
 
 The following error constructors are also defined:
 - `ParserTypeError(..)`
 - `ParserValueError(..)`
+
+Note that `ParserError` instances can be both returned or thrown.
 
 
 ### `Parser(..)` 
@@ -721,6 +729,7 @@ Parser(<spec>)
 ```
 
 See [`<parser>(..)`](#parser-1) for more info.
+
 
 #### `<parser>.then(..)`
 
@@ -738,6 +747,7 @@ callback(<unhandled>, <root-value>, <rest>)
 `then` is triggered when parsing is done or stopped from an option
 handler by returning `THEN`.
 
+
 #### `<parser>.stop(..)`
 
 Add callback to `stop` "event".
@@ -752,6 +762,7 @@ callback(<arg>, <rest>)
 ```
 
 `stop` is triggered when a handler returns `STOP`.
+
 
 #### `<parser>.error(..)`
 
@@ -776,6 +787,7 @@ Remove callback from "event".
 	<parser>.off(<event>, <callback>)
 		-> <parser>
 ```
+
 
 #### `<parser>(..)`
 

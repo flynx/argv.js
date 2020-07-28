@@ -75,7 +75,7 @@ argv.Parser({
 		},
 		'-s': '-string',
 		'-string': {
-			doc: 'collect STR',
+			doc: 'collect tab-separated strings',
 			arg: 'STR | str',
 			collect: 'string|\t',
 		},
@@ -84,13 +84,13 @@ argv.Parser({
 			doc: 'short option', },
 
 		'-type-error': {
-			doc: 'throw an type error',
+			doc: 'throw a type error',
 			type: 'error', 
 		},
 		'-error': {
 			doc: 'throw an error',
 			handler: function(){
-				throw argv.ParserError('error') }},
+				return argv.ParserError('error') }},
 
 
 		'-test': argv.Parser({
