@@ -485,6 +485,7 @@ object.Constructor('Parser', {
 			.replace(/\$SCRIPTNAME/g, this.scriptName) },
 
 	'-h': '-help',
+	// NOTE: this will set .quiet to false...
 	'-help': {
 		doc: 'print this message and exit',
 		priority: 99,
@@ -526,6 +527,9 @@ object.Constructor('Parser', {
 				return items.length > 0 ?
 					['', title +':', ...items]
 					: [] }
+
+			// ignore quiet mode...
+			this.quiet = false
 
 			this.print(
 				expandVars([
@@ -634,6 +638,14 @@ object.Constructor('Parser', {
 			return module.STOP }, },
 
 
+	// Quiet mode...
+	//
+	'-q': '-quiet',
+	'-quiet': {
+		priority: 99,
+		doc: 'quiet mode', },
+
+
 	// Stop processing arguments and continue into .then(..) handlers...
 	//
 	// If .then(..) does not handle rest in the nested context then this
@@ -674,7 +686,8 @@ object.Constructor('Parser', {
 	// Output...
 	//
 	print: afterCallback('print', null, function(...args){
-		console.log(...args)
+		this.quiet
+			|| console.log(...args)
 		return this }),
 	//
 	// 	.printError(...)

@@ -73,6 +73,7 @@ This code is an evolution of that parser.
 			- [`-` / `--`](#-----)
 			- [`-*` / `@*`](#---)
 			- [`-v` / `--version`](#-v----version)
+			- [`-q` / `--quiet`](#-q----quiet)
 			- [`-h` / `--help`](#-h----help)
 				- [Value placeholders](#value-placeholders)
 				- [Automatically defined values](#automatically-defined-values)
@@ -85,7 +86,7 @@ This code is an evolution of that parser.
 				- [More control over help...](#more-control-over-help)
 		- [Nested parsers](#nested-parsers)
 	- [Components and API](#components-and-api)
-		- [`THEN`/ `STOP`](#then-stop)
+		- [`THEN` / `STOP`](#then--stop)
 		- [`ParserError(..)`](#parsererror)
 		- [`Parser(..)`](#parser)
 			- [`<parser>.then(..)`](#parserthen)
@@ -528,6 +529,16 @@ By default `@*` is an alias to `-*`.
 #### `-v` / `--version`
 
 This will output the value of `.version` and exit.
+
+
+#### `-q` / `--quiet`
+
+This will turn quiet mode on.
+
+In quiet mode [`<parser>.print(..)`](#parserprint--parserprinterror) will 
+not print anything.
+
+Passing [`--help`](#-h----help) will disable quiet mode and print normally.
 
 
 #### `-h` / `--help`
