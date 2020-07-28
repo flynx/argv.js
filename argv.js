@@ -641,7 +641,7 @@ object.Constructor('Parser', {
 
 
 	// Quiet mode...
-	// XXX should this have a afterCallback(..) handler???
+	// 
 	quiet: undefined,
 
 	'-q': '-quiet',

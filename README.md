@@ -543,7 +543,9 @@ Passing [`--help`](#-h----help) or [`--version`](#-v----version) will
 disable quiet mode and print normally.
 
 Note that this will only set `<parser>.quiet` to `true` and disable output
-of `<parser>.print(..)`, any user code needs to either also use `<parser>.print(..)` for output (not always practical) or respect `<parser>.quiet`.
+of [`<parser>.print(..)`](#parserprint--parserprinterror), any user code 
+needs to either also use [`<parser>.print(..)`](#parserprint--parserprinterror) 
+for output (not always practical) or respect `<parser>.quiet`.
 
 
 #### `-h` / `--help`
