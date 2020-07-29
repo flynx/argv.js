@@ -27,6 +27,13 @@ var object = require('ig-object')
 
 //---------------------------------------------------------------------
 
+var OPTION_PREFIX = '-'
+var COMMAND_PREFIX = '@'
+
+
+
+//---------------------------------------------------------------------
+
 module.STOP = 
 	{doc: 'Stop option processing, triggers .stop(..) handlers'}
 
@@ -146,6 +153,8 @@ function(name, pre, post){
 //
 //			default: 123,
 //
+//			priority: 50,
+//
 //			required: false,
 //
 //			valueRequired: false,
@@ -261,8 +270,6 @@ object.Constructor('Parser', {
 }, {
 	// config...
 	//
-	optionPrefix: '-',
-	commandPrefix: '@',
 	// NOTE: this must contain two goups the first is the prefix and the 
 	// 		second must contain the option name...
 	// NOTE: we only care about differentiating an option from a command
@@ -271,6 +278,9 @@ object.Constructor('Parser', {
 	commandInputPattern: /^([^-].*)$/,
 
 	splitOptions: true,
+
+	requiredOptionPriority: 80,
+
 
 	// instance stuff...
 	// XXX do we need all three???
@@ -294,8 +304,11 @@ object.Constructor('Parser', {
 	//
 	options: function(...prefix){
 		var that = this
+		var req_prio = this.requiredOptionPriority != null ? 
+			this.requiredOptionPriority
+			: 80
 		prefix = prefix.length == 0 ?
-			[this.optionPrefix]
+			[OPTION_PREFIX]
 			: prefix
 		return prefix
 			.map(function(prefix){
@@ -323,8 +336,12 @@ object.Constructor('Parser', {
 			.flat(1) 
 			.map(function(e, i){ return [e, i] })
 			.sort(function([a, ai], [b, bi]){
-				a = a[3].priority
-				b = b[3].priority
+				a = a[3].priority !== undefined ?
+					a[3].priority 
+					: (a[3].required && req_prio)
+				b = b[3].priority !== undefined ?
+					b[3].priority 
+					: (b[3].required && req_prio)
 				return a != null && b != null ?
 						b - a
 					// positive priority above order, negative below...
@@ -344,7 +361,7 @@ object.Constructor('Parser', {
 			.filter(function([k, a, d, handler]){
 				return handler.required }) },
 	commands: function(){
-		return this.options(this.commandPrefix) },
+		return this.options(COMMAND_PREFIX) },
 
 	// Get handler...
 	//
@@ -359,9 +376,9 @@ object.Constructor('Parser', {
 		key = key.split(/=/).shift()
 		// normalize option/command name...
 		key = this.optionInputPattern.test(key) ?
-				key.replace(this.optionInputPattern, this.optionPrefix+'$2')
-			: !key.startsWith(this.commandPrefix) ?
-				key.replace(this.commandInputPattern, this.commandPrefix+'$1')
+				key.replace(this.optionInputPattern, OPTION_PREFIX+'$2')
+			: !key.startsWith(COMMAND_PREFIX) ?
+				key.replace(this.commandInputPattern, COMMAND_PREFIX+'$1')
 			: key
 		var seen = new Set()
 		while(key in this 
@@ -424,7 +441,7 @@ object.Constructor('Parser', {
 	// common tests...
 	isCommand: function(str){
 		return this.commandInputPattern.test(str) 
-			&& ((this.commandPrefix + str) in this 
+			&& ((COMMAND_PREFIX + str) in this 
 				|| this['@*']) },
 	hasArgument: function(handler){
 		handler = typeof(handler) == typeof('str') ?
@@ -932,7 +949,7 @@ object.Constructor('Parser', {
 			var [arg, value] = arg.split(/=/)
 			// skip single letter unknown or '--' options...
 			if(arg.length <= 2 
-					|| arg.startsWith(parsed.optionPrefix.repeat(2))){
+					|| arg.startsWith(OPTION_PREFIX.repeat(2))){
 				return [arg, undefined] }
 			// split and normalize...
 			var [a, ...r] = 
@@ -959,9 +976,9 @@ object.Constructor('Parser', {
 			// 		because options if unidentified need to be split into
 			// 		single letter options and commands to not...
 			var [type, dfl] = opt_pattern.test(arg) ?
-					['opt', parsed.optionPrefix +'*']
+					['opt', OPTION_PREFIX +'*']
 				: parsed.isCommand(arg) ?
-					['cmd', parsed.commandPrefix +'*']
+					['cmd', COMMAND_PREFIX +'*']
 				: ['unhandled']
 			// options / commands...
 			if(type != 'unhandled'){

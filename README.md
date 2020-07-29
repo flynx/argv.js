@@ -189,6 +189,9 @@ var parser = argv.Parser({
 			arg: '| required_option_given',
 
 			required: true,
+
+			// keep this near the top of the options list in -help...
+			priority: 80,
 		},
 
 
@@ -422,6 +425,12 @@ Ordering is as follows:
 
 Note that options and commands are grouped separately.
 
+The built-in options `-help`, `-version` and `-quiet` have a priority 
+of `99` so that they appear the the top of the `-help` list.
+
+Any option defining `.required` and not defining an explicit `.priority` 
+will be sorted via `<parser>.requiredOptionPriority` (`80` by default).
+
 
 #### `<option>.arg`
 
@@ -557,6 +566,9 @@ of weather the option was given by the user or not.
 
 Sets weather the _parser_ should complain/err if option/command is
 not given.
+
+Note that this also _implicitly_ prioritizes the option, for more info see:
+[`<option>.priority`](#optionpriority).
 
 
 #### `<option>.valueRequired`
