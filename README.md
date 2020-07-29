@@ -259,14 +259,14 @@ And for quick-n-dirty hacking stuff together, a shorthand (_not for production_)
 
 To stop option processing either return `STOP` or `THEN`.
 
-- `THEN` is the normal case, stop processing and trigger [`<parser>.then(..)`](#parserthen):
+- `THEN` is the normal case, stop processing and trigger [`<parser>.then(..)`](./ADVANCED.md#parserthen):
 	```javascript
 			'-then': { 
 				handler: function(){
 					return argv.THEN } },
 	```
 
-- `STOP` will stop processing and trigger [`<parser>.stop(..)`](#parserstop):
+- `STOP` will stop processing and trigger [`<parser>.stop(..)`](./ADVANCED.md#parserstop):
 	```javascript
 			'-stop': { 
 				handler: function(){
@@ -285,7 +285,7 @@ There are three ways to stop and/or report errors:
 					throw argv.ParserError('something went wrong.') } },
 	```
 	Here the error will be reported automatically after processing has stopped 
-	but before [`<parser>.error(..)`](#parsererror-1) is triggered.
+	but before [`<parser>.error(..)`](./ADVANCED.md#parsererror-1) is triggered.
 
 - _Silently_ `return` a `ParserError(..)` instance:
 	```javascript
@@ -294,7 +294,7 @@ There are three ways to stop and/or report errors:
 					return argv.ParserError('something went wrong.') } },
 	```
 	This will _not_ report the error but will stop processing and trigger 
-	[`<parser>.error(..)`](#parsererror-1), so the user can either recover 
+	[`<parser>.error(..)`](./ADVANCED.md#parsererror-1), so the user can either recover 
 	from or report the issue manually.
 
 - For a critical error simply `throw` any other JavaScript error/exception:
@@ -307,7 +307,7 @@ There are three ways to stop and/or report errors:
 		})
 	```
 
-Also see: [`<parser>.printError(..)`](#parserprint--parserprinterror)
+Also see: [`<parser>.printError(..)`](./ADVANCED.md#parserprint--parserprinterror)
 
 
 ### Usage examples
@@ -330,7 +330,7 @@ $ ./script.js -fb
 
 ## In detail
 
-For a more detailed set of docs see ADVANCED.md
+For a more detailed set of docs see [ADVANCED.md](./ADVANCED.md)
 
 
 ## More...
