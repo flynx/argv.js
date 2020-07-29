@@ -90,6 +90,10 @@ argv.Parser({
 		'-error': {
 			doc: 'throw an error',
 			handler: function(){
+				throw argv.ParserError('error') }},
+		'-passive-error': {
+			doc: 'throw an error',
+			handler: function(){
 				return argv.ParserError('error') }},
 
 

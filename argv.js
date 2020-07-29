@@ -26,6 +26,7 @@ var object = require('ig-object')
 
 
 //---------------------------------------------------------------------
+// setup...
 
 var OPTION_PREFIX = '-'
 var COMMAND_PREFIX = '@'
@@ -225,6 +226,11 @@ function(name, pre, post){
 // 		prefixes can be handled by the handler by checking the key argument.
 // 		currently both '-' and '+' are supported.
 // NOTE: essentially this parser is a very basic stack language...
+//
+// XXX revise PareserError handling:
+// 		- throws should get reported
+// 		- returns should be silent
+// 		update code accordingly...
 //
 // XXX should -help work for any command? ..not just nested parsers?
 // 		...should we indicate which thinks have more "-help"??
@@ -934,6 +940,8 @@ object.Constructor('Parser', {
 				// 		the original error.
 				if(!(err instanceof module.ParserError)){
 					throw err } 
+				// XXX should we report an error here???
+				parsed.printError(err)
 				res = err }
 
 			// NOTE: we also need to handle the errors passed to us from 
