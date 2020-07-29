@@ -669,7 +669,7 @@ Remove callback from "event".
 
 Execute the `parser` instance.
 
-Run the parser on `process.argv`
+Run the parser on `process.argv` implicitly:
 ```
 <parser>()
 	-> <result>
