@@ -55,14 +55,15 @@ This code is an evolution of that parser.
 	- [Planned Features](#planned-features)
 	- [Contents](#contents)
 	- [Installation](#installation)
-	- [Basic usage](#basic-usage)
+	- [Basics](#basics)
 		- [Configuring help](#configuring-help)
-		- [Basic options/commands](#basic-optionscommands)
+		- [Basic options](#basic-options)
+		- [Commands](#commands)
 		- [Active options/commands](#active-optionscommands)
 		- [Nested parsers](#nested-parsers)
 		- [Stopping](#stopping)
 		- [Error reporting](#error-reporting)
-		- [Usage examples](#usage-examples)
+		- [Calling the script](#calling-the-script)
 	- [In detail](#in-detail)
 	- [More...](#more)
 	- [License](#license)
@@ -74,7 +75,7 @@ This code is an evolution of that parser.
 $ npm install ig-argv
 ```
 
-## Basic usage
+## Basics
 
 Create a script and make it runnable
 ```shell
@@ -125,7 +126,7 @@ var parser = argv.Parser({
 ```
 
 
-### Basic options/commands
+### Basic options
 
 These, if encountered, simply assign a value to an attribute on the parsed object.
 
@@ -206,20 +207,22 @@ present in the command-line.
 			// this will add each argument to a -push option to a list...
 			collect: 'list',
 		},
+```
 
 
-		// Command...
-		//
-		// The only difference between an option and a command is
-		// the prefix ('-' vs. '@') that determines how it is parsed,
-		// otherwise they are identical and everything above applies here 
-		// too...
+### Commands
+
+The only difference between an _option_ and a _command_ is the prefix (`"-"` vs. `"@"`) 
+that determines how it is parsed, otherwise they are identical and everything 
+above applies here too.
+
+```javascript
 		'@command': {
 			// ...
 		},
 
-		// Since options and commands are identical aliases from one to the 
-		// other to commands are also supported...
+		// Since options and commands are identical, aliases from one to the 
+		// other work as expected...
 		'-c': '@command',
 ```
 
@@ -236,7 +239,7 @@ by the parser
 			} },
 ```
 
-And for quick-n-dirty hacking stuff together, a shorthand (_not for production_):
+And for quick-n-dirty hacking stuff together, a shorthand (_not for production use_):
 ```javascript
 		'-s': '-shorthand-active',
 		'-shorthand-active': function(args, key, value){
@@ -247,7 +250,7 @@ And for quick-n-dirty hacking stuff together, a shorthand (_not for production_)
 
 ### Nested parsers
 
-XXX
+An options/command handler can also be a full fledged parser.
 
 ```javascript
 		'@nested': argv.Parser({
@@ -257,12 +260,23 @@ XXX
 			}),
 ```
 
+This can be useful when there is a need to define a sub-context with it's own 
+options and settings but it does not need to be isolated into a separate 
+external command.
+
+When a nested parser is started it will consume subsequent arguments until it 
+exits, then the parent parser will pick up where it left.
+
+Externally it is treated in exactly the same way as a normal _function_ handler, 
+essentially, the parent parser does not know the difference between the two.
+
 For more detail see the [Nested parsers](./ADVANCED.md#nested-parsers) section 
 in detailed docs.
 
+
 ### Stopping
 
-To stop option processing either return `STOP` or `THEN`.
+To stop option processing either return `STOP` or `THEN` from the handler.
 
 - `THEN` is the normal case, stop processing and trigger [`<parser>.then(..)`](./ADVANCED.md#parserthen):
 	```javascript
@@ -289,8 +303,8 @@ There are three ways to stop and/or report errors:
 				handler: function(){
 					throw argv.ParserError('something went wrong.') } },
 	```
-	Here the error will be reported automatically after processing has stopped 
-	but before [`<parser>.error(..)`](./ADVANCED.md#parsererror-1) is triggered.
+	Here processing will stop and the error will be reported automatically
+	before [`<parser>.error(..)`](./ADVANCED.md#parsererror-1) is triggered.
 
 - _Silently_ `return` a `ParserError(..)` instance:
 	```javascript
@@ -299,8 +313,8 @@ There are three ways to stop and/or report errors:
 					return argv.ParserError('something went wrong.') } },
 	```
 	This will _not_ report the error but will stop processing and trigger 
-	[`<parser>.error(..)`](./ADVANCED.md#parsererror-1), so the user can either recover 
-	from or report the issue manually.
+	[`<parser>.error(..)`](./ADVANCED.md#parsererror-1), so the user can either 
+	recover from or report the issue manually.
 
 - For a critical error simply `throw` any other JavaScript error/exception:
 	```javascript
@@ -312,10 +326,13 @@ There are three ways to stop and/or report errors:
 		})
 	```
 
+Note that [`<parser>.then(..)`](./ADVANCED.md#parserthen) will not be triggered 
+in any of these cases.
+
 Also see: [`<parser>.printError(..)`](./ADVANCED.md#parserprint--parserprinterror)
 
 
-### Usage examples
+### Calling the script
 
 This will create a parser that supports the following:
 ```shell

@@ -582,15 +582,18 @@ the rest of the options to some other command.
 
 A base error constructor. 
 
-If an instance of `ParseError` is thrown or returned by the handler parsing
-is stopped, `<parsing>.error(..)` is called and then the parser will exit 
-with an error (see: [`<parser>.handleErrorExit(..)`](#parserhandleerrorexit)).
+If an instance of `ParserError` is _thrown_ by the handler:
+- parsing is stopped, 
+- the error is reported via [`<parser>.printError(..)`](#parserprint--parserprinterror),
+- [`<parsing>.error(..)`](#parsererror-1) is called, 
+- the parser will exit with an error ([`<parser>.handleErrorExit(..)`](#parserhandleerrorexit)).
+
+`ParserError` can also be _returned_ form the handler, this has almost the 
+same effect as throwing it but the error will _not_ be automatically reported.
 
 The following error constructors are also defined:
 - `ParserTypeError(..)`
 - `ParserValueError(..)`
-
-Note that `ParserError` instances can be both returned or thrown.
 
 
 ### `Parser(..)` 
