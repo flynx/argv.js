@@ -141,9 +141,7 @@ __filename == require.main
 	&& parser(process.argv)
 ```
 
-Option definitions in a bit more detail
-
-XXX make this a set of practical options and leave the attr explanation to later...
+Now let us populate the option definitions:
 ```javascript
 var parser = argv.Parser({
 		// doc sections...
@@ -153,61 +151,111 @@ var parser = argv.Parser({
 		footer: 'Written by $AUTHOR ($VERSION / $LICENSE).',
 		license: 'BSD-3-Clause',
 
-		// alias, this tells the parser that '-b' is the same as '-basic'
-		'-b': '-basic',
-		// basic quick-n-dirty option...
-		'-basic': function(opts, key, value){
-			// ...
-		},
 
-		// basic value-getter option...
+		// Basic options
+		//
+		// These simply asign a value to an attribute on the parsed 
+		// object...
+		//
+		// If no value is given true is asigned to indicate that the 
+		// option/command was given.
+
+		'-bool': {
+			doc: 'if given set .bool to true' },
+
+
+		// option with a value...
 		'-value': {
-			doc: 'Value option',
+			doc: 'set .x to X',
+
+			// 'X' (VALUE) is used for -help while 'x' (key) is where the 
+			// value will be written...
 			arg: 'X | x',
+
+			// the value is optional by default but we can make it required by...
+			//valueRequired: true,
 		},
 
-		// full option settings...
-		'-f': '-full',
-		'-full': {
-			// option doc (optional)
-			doc: 'Option help',
 
-			// option value to be displayed in help (optional)
-			// NOTE: "attr" is used as a key to set the value if .handler
-			//		was not defined and is ingored in all other cases...
-			arg: 'VALUE | attr',
+		// setup an alias -r -> -required
+		'-r': '-required',
 
-			// value type handler (optional)
+		// a required option...
+		'-required': {
+			doc: 'set .required_option_given to true'
+
+			// NOTE: we can omit the VALUE part to not require a value...
+			// NOTE: of no attr is specified in arg option name is used.
+			arg: '| required_option_given',
+
+			required: true,
+		},
+
+
+		'-int': {
+			doc: 'pass an integer value',
+
+			// NOTE: if not key is given the VALUE name is used as a key, so the 
+			// 		value here is assigned to .INT...
+			arg: 'INT',
+
+			// convert the input value to int...
 			type: 'int',
+		},
+		
 
-			// envioroment value (optional)
-			env: 'VALUE',
+		'-default': {
+			doc: 'option with default value',
+			arg: 'VALUE | default',
 
-			// default value (optional)
-			default: 123,
-			
-			// required status (optional)
-			required: false,
-
-			// handler (optional)
-			handler: function(opts, key, value){
-				// ...
-			},
+			default: 'some value',
 		},
 
-		// command...
-		// NOTE: the only difference between an option and a command is
-		//		the prefix ('-' vs. '@') that determines how it is parsed,
-		//		otherwise they are identical and can alias each other...
-		'@cmd', '@command',
+
+		'-home': {
+			doc: 'set home path',
+			arg: 'HOME | home',
+
+			// get the default value from the environment variable $HOME...
+			env: 'HOME',
+		},
+
+		
+		// collecting values...
+		'-p': '-push',
+		'-push': {
+			doc: 'push elements to a .list',
+			arg: 'ELEM | list',
+
+			// this will add each argument to a -push option to a list...
+			collect: 'list',
+		},
+
+
+		// Command...
+		//
+		// The only difference between an option and a command is
+		// the prefix ('-' vs. '@') that determines how it is parsed,
+		// otherwise they are identical and everything above applies here 
+		// too...
 		'@command': {
 			// ...
 		},
 
-		// example command-option alias...
-		'@help': '-help',
+		// Since options and commands are identical aliases from one to the 
+		// other to commands are also supported...
+		'-c': '@command',
 
-		// nested parser...
+
+		// Active options/commnads 
+		//
+		// These define .handler's...
+
+		// XXX .handler
+
+
+		// Nested parsers...
+		//
 		'@nested': argv.Parser({
 				// ...
 			}).then(function(){

@@ -310,7 +310,7 @@ object.Constructor('Parser', {
 								handlers[k][0].push(opt)
 								: (handlers[k] = [
 									[opt], 
-									h.arg 
+									that.hasArgument(h)
 										&& h.arg
 											.split(/\|/)
 											.shift()
@@ -346,12 +346,10 @@ object.Constructor('Parser', {
 	commands: function(){
 		return this.options(this.commandPrefix) },
 
-	isCommand: function(str){
-		return this.commandInputPattern.test(str) 
-			&& ((this.commandPrefix + str) in this 
-				|| this['@*']) },
-
 	// Get handler...
+	//
+	// 	.handler(key)
+	// 		-> [key, handler, ...error_reason]
 	//
 	// NOTE: this ignores any arguments values present in the key...
 	// NOTE: this ignores options forming alias loops and dead-end 
@@ -422,6 +420,19 @@ object.Constructor('Parser', {
 				&& this.unhandled.splice(this.unhandled.length, 0, ...res.unhandled)
 			this.setHandlerValue(handler, key, res) }
 		return res },
+
+	// common tests...
+	isCommand: function(str){
+		return this.commandInputPattern.test(str) 
+			&& ((this.commandPrefix + str) in this 
+				|| this['@*']) },
+	hasArgument: function(handler){
+		handler = typeof(handler) == typeof('str') ?
+			this.handler(handler)[1]
+			: handler
+		return handler 
+			&& handler.arg 
+			&& handler.arg.split(/\|/)[0].trim() != '' },
 
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -880,7 +891,7 @@ object.Constructor('Parser', {
 				: arg.split(/=/)
 			// get value...
 			value = value == null ?
-				(((handler.arg && !opt_pattern.test(rest[0])) ?
+				(((parsed.hasArgument(handler) && !opt_pattern.test(rest[0])) ?
 							rest.shift()
 						: (typeof(process) != 'undefined' && handler.env) ?
 							process.env[handler.env] 

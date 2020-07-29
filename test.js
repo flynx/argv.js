@@ -70,7 +70,7 @@ argv.Parser({
 		'-t': '-toggle',
 		'-toggle': {
 			doc: 'toggle value',
-			arg: '| toggle',
+			arg: '| toggle_value',
 			collect: 'toggle',
 		},
 		'-s': '-string',
