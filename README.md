@@ -247,6 +247,8 @@ And for quick-n-dirty hacking stuff together, a shorthand (_not for production_)
 
 ### Nested parsers
 
+XXX
+
 ```javascript
 		'@nested': argv.Parser({
 				// ...
@@ -254,6 +256,9 @@ And for quick-n-dirty hacking stuff together, a shorthand (_not for production_)
 				// ...
 			}),
 ```
+
+For more detail see the [Nested parsers](./ADVANCED.md#nested-parsers) section 
+in detailed docs.
 
 ### Stopping
 
