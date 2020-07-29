@@ -154,11 +154,11 @@ var parser = argv.Parser({
 
 		// Basic options
 		//
-		// These simply asign a value to an attribute on the parsed 
-		// object...
+		// These if encountered simply asign a value to an attribute on the 
+		// parsed object...
 		//
 		// If no value is given true is asigned to indicate that the 
-		// option/command was given.
+		// option/command is present in the commandline.
 
 		'-bool': {
 			doc: 'if given set .bool to true' },
@@ -172,8 +172,8 @@ var parser = argv.Parser({
 			// value will be written...
 			arg: 'X | x',
 
-			// the value is optional by default but we can make it required by...
-			//valueRequired: true,
+			// the value is optional by default but we can make it required...
+			valueRequired: true,
 		},
 
 
@@ -249,7 +249,8 @@ var parser = argv.Parser({
 
 		// Active options/commnads 
 		//
-		// These define .handler's...
+		// These define .handler's which are executed when the option is 
+		// encountered by the parser...
 
 		'-active': {
 			doc: 'basic active option',
@@ -273,8 +274,6 @@ var parser = argv.Parser({
 			}).then(function(){
 				// ...
 			}),
-
-		// ...
 	})
 ```
 
