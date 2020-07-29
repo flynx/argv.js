@@ -251,7 +251,19 @@ var parser = argv.Parser({
 		//
 		// These define .handler's...
 
-		// XXX .handler
+		'-active': {
+			doc: 'basic active option',
+			handler: function(args, key, value){
+				// ...
+			} },
+
+		// a shorthand active option...
+		// NOTE: this is recomended only for quick and dirty mashups and not
+		//		for production code...
+		'-s': '-shorthand-active',
+		'-shorthand-active': function(args, key, value){
+			// ...
+		},
 
 
 		// Nested parsers...
