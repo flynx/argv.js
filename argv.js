@@ -227,11 +227,6 @@ function(name, pre, post){
 // 		currently both '-' and '+' are supported.
 // NOTE: essentially this parser is a very basic stack language...
 //
-// XXX revise PareserError handling:
-// 		- throws should get reported
-// 		- returns should be silent
-// 		update code accordingly...
-//
 // XXX should -help work for any command? ..not just nested parsers?
 // 		...should we indicate which thinks have more "-help"??
 var Parser =
@@ -715,9 +710,8 @@ object.Constructor('Parser', {
 		doc: false,
 		//section_doc: ...,
 		handler: function(_, key){
-			return this.printError(
-				module.ParserError(
-					`Unknown ${key.startsWith('-') ? 'option:' : 'command:'} ${ key }`)) } },
+			throw module.ParserError(
+				`Unknown ${key.startsWith('-') ? 'option:' : 'command:'} ${ key }`) } },
 	'@*': '-*',
 	
 
@@ -864,6 +858,11 @@ object.Constructor('Parser', {
 	// 		all the parse data...
 	// NOTE: this (i.e. parser) can be used as a nested command/option 
 	// 		handler...
+	// NOTE: we can't throw ParserError(..) from outside the try/catch 
+	// 		block in here as it will not be handled locally...
+	// 		XXX this may need a rethink -- should the try/catch block 
+	// 			include the rest of the cases where reportError(..) is 
+	// 			used or be on a level above runHandler(..)
 	__call__: function(context, argv, main, root_value){
 		var parsed = Object.create(this)
 		var opt_pattern = parsed.optionInputPattern
@@ -1026,6 +1025,10 @@ object.Constructor('Parser', {
 			unhandled.push(arg) }
 		// call value handlers with .env or .default values that were 
 		// not explicitly called yet...
+		// XXX an error, THEN or STOP returned from runHandler(..) in here will 
+		// 		not stop execution -- should it???
+		// XXX a ParserError thrown here will not be handled correctly 
+		// 		in the root parser...
 		parsed.optionsWithValue()
 			.forEach(function([k, a, d, handler]){
 				values.has(handler)	
@@ -1033,6 +1036,7 @@ object.Constructor('Parser', {
 								&& handler.env in process.env) 
 							|| handler.default)
 						&& seen.add(handler)
+						// XXX should we handle STOP / ParserError here???
 						&& runHandler(handler, 
 							[k[0], handler.default], 
 							rest)) })
