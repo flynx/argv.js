@@ -56,7 +56,8 @@ This code is an evolution of that parser.
 	- [Contents](#contents)
 	- [Installation](#installation)
 	- [Basics](#basics)
-		- [Configuring help](#configuring-help)
+	- [Options in more detail](#options-in-more-detail)
+		- [Help and metadata](#help-and-metadata)
 		- [Basic options](#basic-options)
 		- [Commands](#commands)
 		- [Active options/commands](#active-optionscommands)
@@ -110,19 +111,35 @@ This will already create a script that can respond to `-help` and freinds.
 $ ./script.js --help 
 ```
 
-Let us populate the option definitions splitting the job into sections...
+## Options in more detail
 
+Let us populate the option definitions splitting the job into sections.
 
-### Configuring help
-
+And start by creating a parser...
 ```javascript
 var parser = argv.Parser({
-	// doc sections...
-	varsion: '0.0.1',
+```
+
+### Help and metadata
+
+Basic script description
+```javascript
 	doc: 'Example script options',
+```
+	
+Metadata:
+```javascript
+	// to make things consistent we'll take the version from package.json
+	varsion: require('./package.json').version,
+
 	author: 'John Smith <j.smith@some-mail.com>',
-	footer: 'Written by $AUTHOR ($VERSION / $LICENSE).',
 	license: 'BSD-3-Clause',
+```
+
+These basic bits of metadata can be referenced in other `-help` sections, 
+for example:
+```javascript
+	footer: 'Written by $AUTHOR ($VERSION / $LICENSE).',
 ```
 
 
