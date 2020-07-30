@@ -115,7 +115,7 @@ $ ./script.js --help
 
 Let us populate the option definitions splitting the job into sections.
 
-And start by creating a parser...
+Start by creating a parser...
 ```javascript
 var parser = argv.Parser({
 ```
