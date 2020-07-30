@@ -65,7 +65,7 @@ This code is an evolution of that parser.
 		- [Stopping](#stopping)
 		- [Error reporting](#error-reporting)
 		- [Calling the script](#calling-the-script)
-	- [In detail](#in-detail)
+	- [Advanced docs](#advanced-docs)
 	- [More...](#more)
 	- [License](#license)
 
@@ -367,7 +367,7 @@ $ ./script.js -fb
 
 ```
 
-## In detail
+## Advanced docs
 
 For a more detailed set of docs see [ADVANCED.md](./ADVANCED.md)
 
