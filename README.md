@@ -95,7 +95,7 @@ This module provides the following workflow:
 
 - parse 
 	```
-	<parser>(process.argv)
+	<parser>(...)
 		-> <parsed>
 	```
 	- option handlers defined in `<spec>` are called while parsing,
