@@ -496,14 +496,15 @@ object.Constructor('Parser', {
 	//footer: 'Written by $AUTHOR ($VERSION / $LICENSE).',
 	footer: undefined,
 
+	// NOTE: this supports but does not requires the 'colors' module...
 	// XXX should wrap long lines...
 	alignColumns: function(a, b, ...rest){
 		var opts_width = this.helpColumnOffset || 4
 		var prefix = this.helpColumnPrefix || ''
 		b = [b, ...rest].join('\n'+ ('\t'.repeat(opts_width+1) + ' '.repeat(prefix.length)))
 		return b ?
-			(a.strip.length < opts_width*8 ?
-				[a +'\t'.repeat(opts_width - Math.floor(a.strip.length/8))+ prefix + b]
+			((a.strip || a).length < opts_width*8 ?
+				[a +'\t'.repeat(opts_width - Math.floor((a.strip || a).length/8))+ prefix + b]
 				: [a, '\t'.repeat(opts_width)+ prefix + b])
 			: [a] },
 	expandTextVars: function(text){

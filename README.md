@@ -65,6 +65,7 @@ This code is an evolution of that parser.
 		- [Nested parsers](#nested-parsers)
 		- [Stopping](#stopping)
 		- [Error reporting](#error-reporting)
+		- [Handling the result](#handling-the-result)
 		- [Calling the script](#calling-the-script)
 	- [Advanced docs](#advanced-docs)
 	- [More...](#more)
@@ -73,11 +74,11 @@ This code is an evolution of that parser.
 
 ## Architecture
 
-```
-	Parser(..) -> <parser> -> <parsed>
-```
-
 This module provides the following workflow:
+
+```
+Parser(..) -> <parser> -> <parsed>
+```
 
 - define/declare a parser (parse grammar)
 	```
@@ -98,9 +99,9 @@ This module provides the following workflow:
 	<parser>(...)
 		-> <parsed>
 	```
-	- option handlers defined in `<spec>` are called while parsing,
-	- the appropriate `<callback>`s are called after the `<parser>` is done,
-	- everything is run in the context of the `<parsed>` object so any
+	- option handlers (defined in `<spec>`) are called while parsing,
+	- the appropriate `<callback>`'s are called after the `<parser>` is done,
+	- everything is run in the _context_ of the `<parsed>` object so any
 	  data set on it is accessible after parsing is done for further
 	  reference.
 
@@ -142,14 +143,21 @@ var parser = argv.Parser({
 	})
 
 // run the parser...
-__filename == require.main
-	&& parser(process.argv)
+__filename == require.main.filename
+	&& parser()
 ```
 
 This will already create a script that can respond to `-help` and freinds.
 
 ```shell
 $ ./script.js --help 
+Usage: script.js [OPTIONS]
+
+Options:
+        -h,  --help             - print this message and exit
+        -v,  --version          - show script.js verion and exit
+        -q,  --quiet            - quiet mode
+        -                       - stop processing arguments after this point
 ```
 
 ## Options in more detail
@@ -220,10 +228,10 @@ present in the command-line.
 		// NOTE: of no attr is specified in arg option name is used.
 		arg: '| required_option_given',
 
+		// NOTE: by default required options/commands are sorted above normal
+		//		options but bellow -help/-version/-quiet/...
+		//		(by default at priority 80)
 		required: true,
-
-		// keep this near the top of the options list in -help...
-		priority: 80,
 	},
 
 
@@ -244,6 +252,9 @@ present in the command-line.
 		arg: 'VALUE | default',
 
 		default: 'some value',
+
+		// keep this near the top of the options list in -help...
+		priority: 80,
 	},
 
 
@@ -379,15 +390,42 @@ There are three ways to stop and/or report errors:
 		'-critical-error': {
 			handler: function(){
 				throw 'something went really wrong.' } },
-
-	// and to close things off ;)
-	})
 	```
 
 Note that [`<parser>.then(..)`](./ADVANCED.md#parserthen) will not be triggered 
 in any of these cases.
 
 Also see: [`<parser>.printError(..)`](./ADVANCED.md#parserprint--parserprinterror)
+
+```javascript
+// and to close things off for the <spec> ;)
+})
+```
+
+### Handling the result
+
+The `<parser>` will call different sets of callbacks on different stop conditions:
+
+- [`<parser>.then(..)`](./ADVANCED.md#parserthen) for normal exit
+	```javascript
+	.then(function(unhandled, root_value, rest){
+		console.log('finished normally.')
+	})
+	```
+
+- [`<parser>.stop(..)`](./ADVANCED.md#parserstop) when parser is stopped
+	```javascript
+	.stop(function(arg, rest){
+		console.log(`stopped at ${arg}.`)
+	})
+	```
+
+- [`<parser>.stop(..)`](./ADVANCED.md#parserstop) when an error is detected
+	```javascript
+	.error(function(reason, arg, rest){
+		console.log(`something went wrong when parsing ${arg}.`)
+	})
+	```
 
 
 ### Calling the script
