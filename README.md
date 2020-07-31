@@ -101,7 +101,7 @@ This module provides the following workflow:
 	- option handlers defined in `<spec>` are called while parsing,
 	- the appropriate `<callback>`s are called after the `<parser>` is done,
 	- everything is run in the context of the `<parsed>` object so any
-	  data set on it is accessible after parding is done for further
+	  data set on it is accessible after parsing is done for further
 	  reference.
 
 Note that the `<parser>` is fully reusable and on each call will produce
