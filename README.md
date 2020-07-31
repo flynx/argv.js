@@ -147,7 +147,7 @@ __filename == require.main.filename
 	&& parser()
 ```
 
-This will already create a script that can respond to `-help` and freinds.
+This script already knows how to respond to `-help` and friends.
 
 ```shell
 $ ./bare.js --help 
