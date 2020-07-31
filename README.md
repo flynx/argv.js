@@ -130,7 +130,7 @@ Basic script description
 Metadata:
 ```javascript
 	// to make things consistent we'll take the version from package.json
-	varsion: require('./package.json').version,
+	version: require('./package.json').version,
 
 	author: 'John Smith <j.smith@some-mail.com>',
 	license: 'BSD-3-Clause',
