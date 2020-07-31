@@ -68,7 +68,6 @@ This code is an evolution of that parser.
 		- [Handling the result](#handling-the-result)
 		- [Calling the script](#calling-the-script)
 	- [Advanced docs](#advanced-docs)
-	- [More...](#more)
 	- [License](#license)
 
 
@@ -553,12 +552,9 @@ Parser {
 
 ## Advanced docs
 
-For a more detailed set of docs see [ADVANCED.md](./ADVANCED.md)
+For a more detailed set of docs see [ADVANCED.md](./ADVANCED.md).
 
-
-## More...
-
-For more info see the [source](./argv.js).
+For even more detail see the [source](./argv.js)...
 
 
 ## License
