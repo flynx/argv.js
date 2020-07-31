@@ -120,10 +120,10 @@ $ npm install ig-argv
 
 ## Basics
 
-Create a script and make it runnable
+Create a [bare.js](./examples/bare.js) script and make it runnable
 ```shell
-$ touch script.js
-$ chmod +x script.js
+$ touch bare.js
+$ chmod +x bare.js
 ```
 
 Now for the code
@@ -150,24 +150,36 @@ __filename == require.main.filename
 This will already create a script that can respond to `-help` and freinds.
 
 ```shell
-$ ./script.js --help 
-Usage: script.js [OPTIONS]
+$ ./bare.js --help 
+Usage: bare.js [OPTIONS]
 
 Options:
         -h,  --help             - print this message and exit
-        -v,  --version          - show script.js verion and exit
+        -v,  --version          - show bare.js verion and exit
         -q,  --quiet            - quiet mode
         -                       - stop processing arguments after this point
 ```
 
 ## Options in more detail
 
-Let us populate the option definitions splitting the job into sections.
+Start by creating an [`options.js`](./examples/options.js) script...
+```shell
+$ touch options.js
+$ chmod +x options.js
+```
 
-Start by creating a parser...
+...and a parser:
 ```javascript
+#!/usr/bin/env node
+
+// compatible with both node's and RequireJS' require(..)
+var argv = require('ig-argv')
+
 var parser = argv.Parser({
 ```
+
+Now let us populate the option definitions splitting the job into sections.
+
 
 ### Help and metadata
 
@@ -222,7 +234,7 @@ present in the command-line.
 
 	// a required option...
 	'-required': {
-		doc: 'set .required_option_given to true'
+		doc: 'set .required_option_given to true',
 
 		// NOTE: we can omit the VALUE part to not require a value...
 		// NOTE: of no attr is specified in arg option name is used.
@@ -409,21 +421,22 @@ The `<parser>` will call different sets of callbacks on different stop condition
 - [`<parser>.then(..)`](./ADVANCED.md#parserthen) for normal exit
 	```javascript
 	.then(function(unhandled, root_value, rest){
-		console.log('finished normally.')
+		console.log('### finished normally.')
+		console.log(this)
 	})
 	```
 
 - [`<parser>.stop(..)`](./ADVANCED.md#parserstop) when parser is stopped
 	```javascript
 	.stop(function(arg, rest){
-		console.log(`stopped at ${arg}.`)
+		console.log(`### stopped at ${arg}.`)
 	})
 	```
 
 - [`<parser>.stop(..)`](./ADVANCED.md#parserstop) when an error is detected
 	```javascript
 	.error(function(reason, arg, rest){
-		console.log(`something went wrong when parsing ${arg}.`)
+		console.log(`### something went wrong when parsing ${arg}.`)
 	})
 	```
 
@@ -432,18 +445,110 @@ The `<parser>` will call different sets of callbacks on different stop condition
 
 This will create a parser that supports the following:
 ```shell
-$ ./script.js --help 
+$ ./options.js --help 
+Usage: options.js [OPTIONS]
 
-$ ./script.js --value 321
+Example script options
 
-$ ./script.js --value=321
+Options:
+        -h,  --help             - print this message and exit
+        -v,  --version          - show options.js verion and exit
+        -q,  --quiet            - quiet mode
+        -r,  --required         - set .required_option_given to true
+                                  (Required)
+             --default=VALUE    - option with default value
+                                  (Default: some value)
+             --bool             - if given set .bool to true
+             --value=X          - set .x to X
+             --int=INT          - pass an integer value
+             --home=HOME        - set home path
+                                  (Env: $HOME)
+        -p,  --push=ELEM        - push elements to a .list
+        -c                      - command
+             --active           - basic active option
+        -s,  --shorthand-active - shorthand-active
+             --then             - then
+             --stop             - stop
+             --error            - error
+             --silent-error     - silent-error
+             --critical-error   - critical-error
+        -                       - stop processing arguments after this point
 
-$ ./script.js command
+Commands:
+        command                 - command
+        nested                  - nested
 
-$ ./script.js nested -h
+Written by John Smith <j.smith@some-mail.com> (2.8.1 / BSD-3-Clause).
+### stopped at --help.
+```
 
-$ ./script.js -fb
+Required argument handling
+```shell
+$ ./options.js
+options.js: ParserError: required but missing: -required
+### something went wrong when parsing -required.  
+```
 
+```shell
+$ ./options.js -r
+### finished normally.
+Parser {
+  ...
+  required_option_given: true,
+  default: 'some value',
+  home: true
+}
+```
+
+Passing values implicitly
+```shell
+$ ./script.js -r --value 321
+### finished normally.
+Parser {
+  ...
+  required_option_given: true,
+  x: '321',
+  default: 'some value',
+  home: true
+}
+```
+
+Passing values explicitly
+```shell
+$ ./script.js -r --value=321
+### finished normally.
+Parser {
+  ...
+  required_option_given: true,
+  x: '321',
+  default: 'some value',
+  home: true
+}
+```
+
+```shell
+$ ./script.js -r command
+
+```
+
+```shell
+$ ./script.js -r nested
+
+$ ./script.js -r nested -h
+
+```
+
+Split options
+```shell
+$ ./script.js -rsc
+### finished normally.
+Parser {
+  ...
+  required_option_given: true,
+  command: true,
+  default: 'some value',
+  home: true
+}
 ```
 
 ## Advanced docs

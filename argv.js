@@ -904,10 +904,9 @@ object.Constructor('Parser', {
 				&& parsed.handleErrorExit(arg, reason) }
 		var reportError = function(message, arg, rest){
 			message = message
-				.replace(/$ARG/g, arg)
-			handleError(message, arg, rest)
-			return parsed.printError(
-				module.ParserError(message)) }
+				.replace(/\$ARG/g, arg)
+			parsed.printError(module.ParserError(message)) 
+			return handleError(message, arg, rest) }
 		var runHandler = function(handler, arg, rest){
 			var [arg, value] = arg instanceof Array ?
 				arg
