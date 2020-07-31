@@ -54,6 +54,7 @@ This code is an evolution of that parser.
 	- [Features](#features)
 	- [Planned Features](#planned-features)
 	- [Contents](#contents)
+	- [Architecture](#architecture)
 	- [Installation](#installation)
 	- [Basics](#basics)
 	- [Options in more detail](#options-in-more-detail)
@@ -68,6 +69,46 @@ This code is an evolution of that parser.
 	- [Advanced docs](#advanced-docs)
 	- [More...](#more)
 	- [License](#license)
+
+
+## Architecture
+
+```
+	Parser(..) -> <parser> -> <parsed>
+```
+
+This module provides the following workflow:
+
+- define/declare a parser (parse grammar)
+	```
+	Parser(<spec>)
+		-> <parser>
+	```
+
+- define post-parse callbacks (optional)
+	```
+	<parser>
+		.then(<callback>)
+		.stop(<callback>)
+		.error(<callback>)
+	```
+
+- parse 
+	```
+	<parser>(process.argv)
+		-> <parsed>
+	```
+	- option handlers defined in `<spec>` are called while parsing,
+	- the appropriate `<callback>`s are called after the `<parser>` is done,
+	- everything is run in the context of the `<parsed>` object so any
+	  data set on it is accessible after parding is done for further
+	  reference.
+
+Note that the `<parser>` is fully reusable and on each call will produce
+a new `<parsed>` object.
+
+The `<parsed>` object has the `<parser>` as its `.__proto__`.
+
 
 
 ## Installation
