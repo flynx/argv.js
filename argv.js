@@ -876,6 +876,8 @@ object.Constructor('Parser', {
 	// 		all the parse data...
 	// NOTE: this (i.e. parser) can be used as a nested command/option 
 	// 		handler...
+	//
+	// XXX BUG: can't pass "" as value...
 	__call__: function(context, argv, main, root_value){
 		var parsed = Object.create(this)
 		var opt_pattern = parsed.optionInputPattern
@@ -923,10 +925,12 @@ object.Constructor('Parser', {
 				: arg.split(/=/)
 			// get value...
 			value = value == null ?
-				(((parsed.hasArgument(handler) && !opt_pattern.test(rest[0])) ?
+				(((parsed.hasArgument(handler) 
+								&& rest.length > 0
+								&& !opt_pattern.test(rest[0])) ?
 							rest.shift()
 						: (typeof(process) != 'undefined' && handler.env) ?
-							process.env[handler.env] 
+							process.env[handler.env.replace(/^\$/, '')]
 						: value)
 					|| handler.default)
 				: value
@@ -1021,8 +1025,7 @@ object.Constructor('Parser', {
 						throw ParserError(`Unknown ${ type == 'opt' ? 'option' : 'command:' } $ARG`, arg) }
 
 					// mark/unmark handlers...
-					values instanceof Set
-						&& values.delete(handler)
+					values.delete(handler)
 					seen.add(handler)
 
 				// implicit options -- with .env and or .default set...
