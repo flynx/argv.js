@@ -448,9 +448,10 @@ object.Constructor('Parser', {
 
 	// common tests...
 	isCommand: function(str){
-		return this.commandInputPattern.test(str) 
+		return (str == '' 
+				|| this.commandInputPattern.test(str))
 			&& ((COMMAND_PREFIX + str) in this 
-				|| this['@*']) },
+				|| !!this['@*']) },
 	hasArgument: function(handler){
 		handler = typeof(handler) == typeof('str') ?
 			this.handler(handler)[1]
@@ -876,8 +877,6 @@ object.Constructor('Parser', {
 	// 		all the parse data...
 	// NOTE: this (i.e. parser) can be used as a nested command/option 
 	// 		handler...
-	//
-	// XXX BUG: can't pass "" as value...
 	__call__: function(context, argv, main, root_value){
 		var parsed = Object.create(this)
 		var opt_pattern = parsed.optionInputPattern
@@ -925,14 +924,16 @@ object.Constructor('Parser', {
 				: arg.split(/=/)
 			// get value...
 			value = value == null ?
-				(((parsed.hasArgument(handler) 
+				((parsed.hasArgument(handler) 
 								&& rest.length > 0
 								&& !opt_pattern.test(rest[0])) ?
 							rest.shift()
 						: (typeof(process) != 'undefined' && handler.env) ?
 							process.env[handler.env.replace(/^\$/, '')]
 						: value)
-					|| handler.default)
+				: value
+			value = value == null ?
+				handler.default
 				: value
 			// value conversion...
 			value = (value != null 
