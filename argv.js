@@ -993,10 +993,8 @@ object.Constructor('Parser', {
 					if(typeof(arg) != typeof('str')){
 						unhandled.push(arg) 
 						continue }
-					// options / commands...
-					// NOTE: opts and commands do not follow the same path here 
-					// 		because options if unidentified need to be split into
-					// 		single letter options and commands to not...
+					// quote '-*' / '@*'...
+					arg = arg.replace(/^(.)\*$/, '$1\\*')
 					var [type, dfl] = opt_pattern.test(arg) ?
 							['opt', OPTION_PREFIX +'*']
 						: parsed.isCommand(arg) ?
@@ -1005,10 +1003,11 @@ object.Constructor('Parser', {
 					if(type == 'unhandled'){
 						unhandled.push(arg)
 						continue }
-					// quote '-*' / '@*'...
-					arg = arg.replace(/^(.)\*$/, '$1\\*')
 
 					// get handler...
+					// NOTE: opts and commands do not follow the same path here 
+					// 		because options if unidentified need to be split into
+					// 		single letter options and commands to not...
 					var handler = parsed.handler(arg)[1]
 						// handle merged options...
 						|| (type == 'opt' 
@@ -1028,8 +1027,6 @@ object.Constructor('Parser', {
 
 				// implicit options -- with .env and or .default set...
 				} else {
-					values instanceof Map
-						&& console.log('>>>>>', values)
 					values = values instanceof Map ?
 						[...values]
 						: values
