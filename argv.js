@@ -907,6 +907,7 @@ object.Constructor('Parser', {
 			script.length - parsed.scriptName.length)
 
 		// helpers...
+		// XXX should this pass the error as-is to the API???
 		var handleError = function(reason, arg, rest){
 			arg = arg || reason.arg
 			rest = rest || reason.rest
@@ -953,7 +954,7 @@ object.Constructor('Parser', {
 			// 		nested parsers...
 			res === module.STOP
 				&& parsed.stop(arg, rest)
-			// XXX revise -- do we need to re-handle errors???
+			// handle passive/returned errors...
 			res instanceof module.ParserError
 				&& handleError(res, arg, rest)
 			return res }
@@ -978,27 +979,35 @@ object.Constructor('Parser', {
 
 		try{
 			// parse/interpret the arguments and call handlers...
-			var values = new Set()
+			var values = new Map(
+				parsed.optionsWithValue()
+					.map(function([k, a, d, handler]){ 
+						return [handler, k[0]] }))
 			var seen = new Set()
 			var unhandled = parsed.unhandled = []
-			while(rest.length > 0){
-				var arg = rest.shift()
-				// non-string stuff in arg list...
-				if(typeof(arg) != typeof('str')){
-					unhandled.push(arg) 
-					continue }
-				// NOTE: opts and commands do not follow the same path here 
-				// 		because options if unidentified need to be split into
-				// 		single letter options and commands to not...
-				var [type, dfl] = opt_pattern.test(arg) ?
-						['opt', OPTION_PREFIX +'*']
-					: parsed.isCommand(arg) ?
-						['cmd', COMMAND_PREFIX +'*']
-					: ['unhandled']
-				// options / commands...
-				if(type != 'unhandled'){
+			while(rest.length > 0 || (values.size || values.length) > 0){
+				// explicitly passed options...
+				if(rest.length > 0){
+					var arg = rest.shift()
+					// non-string stuff in arg list...
+					if(typeof(arg) != typeof('str')){
+						unhandled.push(arg) 
+						continue }
+					// options / commands...
+					// NOTE: opts and commands do not follow the same path here 
+					// 		because options if unidentified need to be split into
+					// 		single letter options and commands to not...
+					var [type, dfl] = opt_pattern.test(arg) ?
+							['opt', OPTION_PREFIX +'*']
+						: parsed.isCommand(arg) ?
+							['cmd', COMMAND_PREFIX +'*']
+						: ['unhandled']
+					if(type == 'unhandled'){
+						unhandled.push(arg)
+						continue }
 					// quote '-*' / '@*'...
 					arg = arg.replace(/^(.)\*$/, '$1\\*')
+
 					// get handler...
 					var handler = parsed.handler(arg)[1]
 						// handle merged options...
@@ -1012,39 +1021,32 @@ object.Constructor('Parser', {
 					if(handler == null){
 						throw ParserError(`Unknown ${ type == 'opt' ? 'option' : 'command:' } $ARG`, arg) }
 
-					// mark handler...
-					;(handler.env || 'default' in handler)
-						&& values.add(handler)
+					// mark/unmark handlers...
+					values instanceof Set
+						&& values.delete(handler)
 					seen.add(handler)
 
-					var res = runHandler(handler, arg, rest)
+				// implicit options -- with .env and or .default set...
+				} else {
+					values instanceof Map
+						&& console.log('>>>>>', values)
+					values = values instanceof Map ?
+						[...values]
+						: values
+					var [handler, arg] = values.shift() }
 
-					// handle stop conditions...
-					if(res === module.STOP 
-							|| res instanceof module.ParserError){
-						return nested ?
-							res
-							: parsed }
-					// finish arg processing now...
-					if(res === module.THEN){
-						break }
-					continue }
-				// unhandled...
-				unhandled.push(arg) }
-			// call value handlers with .env or .default values that were 
-			// not explicitly called yet...
-			// XXX THEN or STOP returned from runHandler(..) in here will 
-			// 		not stop execution -- should it???
-			parsed.optionsWithValue()
-				.forEach(function([k, a, d, handler]){
-					values.has(handler)	
-						|| (((typeof(process) != 'undefined' 
-									&& handler.env in process.env) 
-								|| handler.default)
-							&& seen.add(handler)
-							&& runHandler(handler, 
-								[k[0], handler.default], 
-								rest)) })
+
+				var res = runHandler(handler, arg, rest)
+
+				// handle stop conditions...
+				if(res === module.STOP 
+						|| res instanceof module.ParserError){
+					return nested ?
+						res
+						: parsed }
+				// finish arg processing now...
+				if(res === module.THEN){
+					break } }
 
 			// check and report required options...
 			var missing = parsed
@@ -1061,12 +1063,10 @@ object.Constructor('Parser', {
 			// re-throw the error...
 			if(!(err instanceof module.ParserError)){
 				throw err } 
-
 			// report local errors...
 			// NOTE: non-local errors are threaded as return values...
 			parsed.printError(err) 
 			handleError(err, err.arg, rest)
-
 			return nested ?
 				err
 				: parsed }
