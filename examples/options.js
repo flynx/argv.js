@@ -117,6 +117,8 @@ argv.Parser({
 		}).then(function(){
 			// ...
 		}),
+	
+	'@bare': require('./bare').parser,
 
 	'-then': { 
 		handler: function(){

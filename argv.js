@@ -209,7 +209,7 @@ function(name, pre, post){
 //
 //	Parse(..) 
 //		- constructs a parser object (instance)
-//	parse(..) 
+//	parser(..) 
 //		- parse is instance of Parse
 //		- contains the parsing configuration / grammar
 //		- parses the argv
@@ -234,6 +234,14 @@ function(name, pre, post){
 // 		currently both '-' and '+' are supported.
 // NOTE: essentially this parser is a very basic stack language...
 //
+// XXX setting option value can overload and break existing API, for 
+// 		example:
+// 			@options: {},
+// 		shadow .options(..) and break parsing...
+// 		...not sure how to handle this...
+// 			- isolate parsed from parser
+// 			- isolate option data from parser
+// 			- ...
 // XXX should -help work for any command? ..not just nested parsers?
 // 		...should we indicate which thinks have more "-help"??
 var Parser =

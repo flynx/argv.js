@@ -39,7 +39,7 @@ This code is an evolution of that parser.
   - Customizable error and stop condition handling
 
 
-## Planned Features
+### Planned
 
 - Run `<command>-<sub-command>` scripts
 - Option doc grouping (???)
@@ -52,7 +52,7 @@ This code is an evolution of that parser.
 - [argv.js](#argvjs)
 	- [Motivation](#motivation)
 	- [Features](#features)
-	- [Planned Features](#planned-features)
+		- [Planned](#planned)
 	- [Contents](#contents)
 	- [Architecture](#architecture)
 	- [Installation](#installation)
@@ -76,7 +76,7 @@ This code is an evolution of that parser.
 This module provides the following workflow:
 
 ```
-Parser(..) -> <parser> -> <parsed>
+Parser(..) -> <parser>(..) -> <parsed>
 ```
 
 - define/declare a parser (parse grammar)
@@ -99,7 +99,7 @@ Parser(..) -> <parser> -> <parsed>
 		-> <parsed>
 	```
 	- option handlers (defined in `<spec>`) are called while parsing,
-	- the appropriate `<callback>`'s are called after the `<parser>` is done,
+	- then/stop/error `<callback>`'s are called after the `<parser>` is done,
 	- everything is run in the _context_ of the `<parsed>` object so any
 	  data set on it is accessible after parsing is done for further
 	  reference.
@@ -132,17 +132,19 @@ Now for the code
 // compatible with both node's and RequireJS' require(..)
 var argv = require('ig-argv')
 
-var parser = argv.Parser({
-		// option definitions...
-		// ...
-	})
-	.then(function(){
-		// things to do after the options are handled...
-		// ...
-	})
+var parser = 
+exports.parser = 
+	argv.Parser({
+			// option definitions...
+			// ...
+		})
+		.then(function(){
+			// things to do after the options are handled...
+			// ...
+		})
 
 // run the parser...
-__filename == require.main.filename
+__filename == (require.main || {}).filename
 	&& parser()
 ```
 
@@ -338,6 +340,9 @@ An options/command handler can also be a full fledged parser.
 		}).then(function(){
 			// ...
 		}),
+
+	// and for fun, import the bare parser...
+	'@bare': require('./bare').parser,
 ```
 
 This can be useful when there is a need to define a sub-context with it's own 
@@ -408,8 +413,8 @@ in any of these cases.
 
 Also see: [`<parser>.printError(..)`](./ADVANCED.md#parserprint--parserprinterror)
 
+And to close things off for the `<spec>` ;)
 ```javascript
-// and to close things off for the <spec> ;)
 })
 ```
 
@@ -421,22 +426,19 @@ The `<parser>` will call different sets of callbacks on different stop condition
 	```javascript
 	.then(function(unhandled, root_value, rest){
 		console.log('### finished normally.')
-		console.log(this)
-	})
+		console.log(this) })
 	```
 
 - [`<parser>.stop(..)`](./ADVANCED.md#parserstop) when parser is stopped
 	```javascript
 	.stop(function(arg, rest){
-		console.log(`### stopped at ${arg}.`)
-	})
+		console.log(`### stopped at ${arg}.`) })
 	```
 
 - [`<parser>.stop(..)`](./ADVANCED.md#parserstop) when an error is detected
 	```javascript
 	.error(function(reason, arg, rest){
-		console.log(`### something went wrong when parsing ${arg}.`)
-	})
+		console.log(`### something went wrong when parsing ${arg}.`) })
 	```
 
 
@@ -476,6 +478,7 @@ Options:
 Commands:
         command                 - command
         nested                  - nested
+		bare					- bare
 
 Written by John Smith <j.smith@some-mail.com> (2.8.1 / BSD-3-Clause).
 ### stopped at --help.
@@ -494,10 +497,13 @@ $ ./options.js -r
 Parser {
   ...
   required_option_given: true,
+  ...
   default: 'some value',
-  home: true
+  home: '...'
 }
 ```
+Notice the default values are set in the output above (output partially truncated
+for brevity).
 
 Passing values implicitly
 ```shell
@@ -507,8 +513,7 @@ Parser {
   ...
   required_option_given: true,
   x: '321',
-  default: 'some value',
-  home: true
+  ...
 }
 ```
 
@@ -520,33 +525,51 @@ Parser {
   ...
   required_option_given: true,
   x: '321',
-  default: 'some value',
-  home: true
+  ...
 }
 ```
 
+Call a nested parser
 ```shell
-$ ./script.js -r command
+$ ./script.js nested -h
+Usage: options.js nested [OPTIONS]
 
+Options:
+        -h,  --help             - print this message and exit
+        -v,  --version          - show options.js nested verion and exit
+        -q,  --quiet            - quiet mode
+        -                       - stop processing arguments after this point
+### stopped at nested.
 ```
 
 ```shell
-$ ./script.js -r nested
-
-$ ./script.js -r nested -h
-
-```
-
-Split options
-```shell
-$ ./script.js -rsc
+$ ./script.js -r bare
 ### finished normally.
 Parser {
   ...
   required_option_given: true,
-  command: true,
-  default: 'some value',
-  home: true
+  bare: Parser {
+    rest: [],
+    argv: [],
+    nested: true,
+    script: 'options.js bare',
+    scriptName: 'options.js bare',
+    scriptPath: '',
+    unhandled: []
+  },
+  ...
+}
+```
+
+Split options and pass value to the last one
+```shell
+$ ./options.js -rsc=321
+### finished normally.
+Parser {
+  ...
+  required_option_given: true,
+  command: '321',
+  ...
 }
 ```
 
