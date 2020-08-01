@@ -44,6 +44,10 @@ module.THEN =
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
+// NOTE: it would be great to make .message a prop and handle '$ARG' 
+// 		replacement but JS uses it internally in a non standard way 
+// 		so the prop is circumvented internally... (XXX)
+// 		...currently the substitution is done in .printError(..)
 module.ParserError = 
 	object.Constructor('ParserError', Error, {
 		// NOTE: I do not get why JavaScript's Error implements this 
@@ -286,7 +290,7 @@ object.Constructor('Parser', {
 }, {
 	// config...
 	//
-	// NOTE: this must contain two goups the first is the prefix and the 
+	// NOTE: this must contain two groups the first is the prefix and the 
 	// 		second must contain the option name...
 	// NOTE: we only care about differentiating an option from a command
 	// 		here by design...
@@ -851,7 +855,7 @@ object.Constructor('Parser', {
 
 	// Post parsing callbacks...
 	//
-	// 	.then(callback(unhandleed, root_value, rest))
+	// 	.then(callback(unhandled, root_value, rest))
 	//
 	// 	.stop(callback(arg, rest))
 	// 	.error(callback(reason, arg, rest))
