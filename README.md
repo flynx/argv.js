@@ -435,7 +435,7 @@ The `<parser>` will call different sets of callbacks on different stop condition
 		console.log(`### stopped at ${arg}.`) })
 	```
 
-- [`<parser>.stop(..)`](./ADVANCED.md#parserstop) when an error is detected
+- [`<parser>.error(..)`](./ADVANCED.md#parsererror) when an error is detected
 	```javascript
 	.error(function(reason, arg, rest){
 		console.log(`### something went wrong when parsing ${arg}.`) })
