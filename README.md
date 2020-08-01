@@ -113,14 +113,14 @@ The `<parsed>` object has the `<parser>` as its `.__proto__`.
 
 ## Installation
 
-```shell
+```shell_session
 $ npm install ig-argv
 ```
 
 ## Basics
 
 Create a [bare.js](./examples/bare.js) script and make it runnable
-```shell
+```shell_session
 $ touch bare.js
 $ chmod +x bare.js
 ```
@@ -150,7 +150,7 @@ __filename == (require.main || {}).filename
 
 This script already knows how to respond to `-help` and friends.
 
-```shell
+```shell_session
 $ ./bare.js --help 
 Usage: bare.js [OPTIONS]
 
@@ -164,7 +164,7 @@ Options:
 ## Options in more detail
 
 Start by creating an [`options.js`](./examples/options.js) script...
-```shell
+```shell_session
 $ touch options.js
 $ chmod +x options.js
 ```
@@ -445,7 +445,7 @@ The `<parser>` will call different sets of callbacks on different stop condition
 ### Calling the script
 
 This will create a parser that supports the following:
-```shell
+```shell_session
 $ ./options.js --help 
 Usage: options.js [OPTIONS]
 
@@ -478,20 +478,20 @@ Options:
 Commands:
         command                 - command
         nested                  - nested
-		bare					- bare
+        bare                    - bare
 
 Written by John Smith <j.smith@some-mail.com> (2.8.1 / BSD-3-Clause).
 ### stopped at --help.
 ```
 
 Required argument handling
-```shell
+```shell_session
 $ ./options.js
 options.js: ParserError: required but missing: -required
 ### something went wrong when parsing -required.  
 ```
 
-```shell
+```shell_session
 $ ./options.js -r
 ### finished normally.
 Parser {
@@ -506,7 +506,7 @@ Notice the default values are set in the output above (output partially truncate
 for brevity).
 
 Passing values implicitly
-```shell
+```shell_session
 $ ./script.js -r --value 321
 ### finished normally.
 Parser {
@@ -518,7 +518,7 @@ Parser {
 ```
 
 Passing values explicitly
-```shell
+```shell_session
 $ ./script.js -r --value=321
 ### finished normally.
 Parser {
@@ -530,7 +530,7 @@ Parser {
 ```
 
 Call a nested parser
-```shell
+```shell_session
 $ ./script.js nested -h
 Usage: options.js nested [OPTIONS]
 
@@ -542,7 +542,7 @@ Options:
 ### stopped at nested.
 ```
 
-```shell
+```shell_session
 $ ./script.js -r bare
 ### finished normally.
 Parser {
@@ -562,7 +562,7 @@ Parser {
 ```
 
 Split options and pass value to the last one
-```shell
+```shell_session
 $ ./options.js -rsc=321
 ### finished normally.
 Parser {

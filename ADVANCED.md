@@ -524,7 +524,7 @@ A way to explicitly stop the _nested parser_ processing at a specific
 point in the argument list is to pass it a `-` argument at that point.
 
 For example:
-```shell
+```shell_session
 $ script -a nested -b -c - -x -y -z
 ```
 
