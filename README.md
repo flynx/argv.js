@@ -179,7 +179,7 @@ var argv = require('ig-argv')
 var parser = argv.Parser({
 ```
 
-Now let us populate the option definitions splitting the job into sections.
+Now let us populate the option definitions, splitting the job into sections...
 
 
 ### Help and metadata
