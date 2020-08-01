@@ -49,7 +49,14 @@ module.ParserError =
 		// NOTE: I do not get why JavaScript's Error implements this 
 		// 		statically...
 		get name(){
-			return this.constructor.name }, })
+			return this.constructor.name }, 
+
+		// NOTE: msg is handled by Error(..)
+		__init__: function(msg, arg, rest){
+			this.arg = arg
+			this.rest = rest
+		},
+	})
 
 module.ParserTypeError = 
 	object.Constructor('ParserTypeError', module.ParserError, {})
@@ -712,7 +719,7 @@ object.Constructor('Parser', {
 		//section_doc: ...,
 		handler: function(_, key){
 			throw module.ParserError(
-				`Unknown ${key.startsWith('-') ? 'option:' : 'command:'} ${ key }`) } },
+				`Unknown ${key.startsWith('-') ? 'option:' : 'command:'} $ARG`) } },
 	'@*': '-*',
 	
 
@@ -731,11 +738,20 @@ object.Constructor('Parser', {
 	// 	.printError(error, ...)
 	// 		-> error
 	//
+	// NOTE: this handles $ARG in error.message.
 	printError: afterCallback('print_error', null, function(...args){
 		if(args[0] instanceof module.ParserError){
+			var err = args[0]
 			console.error(
-				this.scriptName+':', args[0].name+':', args[0].message, ...args.slice(1))
-			return args[0] }
+				this.scriptName+':', 
+				err.name+':', 
+				err.message
+					// XXX this should be done in ParserError but there 
+					// 		we have to fight Error's implementation of 
+					// 		.message and its use...
+					.replace(/\$ARG/, err.arg), 
+				...args.slice(1))
+			return err }
 		console.error(this.scriptName+': Error:', ...args)
 		return this }),
 
@@ -820,7 +836,8 @@ object.Constructor('Parser', {
 	// error...
 	handleErrorExit: function(arg, reason){
 		typeof(process) != 'unhandled'
-			&& process.exit(1) },
+			&& process.exit(1) 
+		return this },
 
 
 	// Post parsing callbacks...
@@ -859,11 +876,6 @@ object.Constructor('Parser', {
 	// 		all the parse data...
 	// NOTE: this (i.e. parser) can be used as a nested command/option 
 	// 		handler...
-	// NOTE: we can't throw ParserError(..) from outside the try/catch 
-	// 		block in here as it will not be handled locally...
-	// 		XXX this may need a rethink -- should the try/catch block 
-	// 			include the rest of the cases where reportError(..) is 
-	// 			used or be on a level above runHandler(..)
 	__call__: function(context, argv, main, root_value){
 		var parsed = Object.create(this)
 		var opt_pattern = parsed.optionInputPattern
@@ -896,17 +908,14 @@ object.Constructor('Parser', {
 
 		// helpers...
 		var handleError = function(reason, arg, rest){
+			arg = arg || reason.arg
+			rest = rest || reason.rest
 			reason = reason instanceof Error ?
 				[reason.name, reason.message].join(': ')
 				: reason
 			parsed.error(reason, arg, rest)
 			parsed.handleErrorExit
 				&& parsed.handleErrorExit(arg, reason) }
-		var reportError = function(message, arg, rest){
-			message = message
-				.replace(/\$ARG/g, arg)
-			parsed.printError(module.ParserError(message)) 
-			return handleError(message, arg, rest) }
 		var runHandler = function(handler, arg, rest){
 			var [arg, value] = arg instanceof Array ?
 				arg
@@ -927,26 +936,24 @@ object.Constructor('Parser', {
 				: value
 			// required value check...
 			if(handler.valueRequired && value == null){
-				return reportError('Value missing: $ARG=?', arg, rest) }
+				throw module.ParserValueError('Value missing: ${ arg }=?') }
 
+			// run handler...
 			try {
-				// run handler...
 				var res = parsed.handle(handler, rest, arg, value)
 
+			// update error object with current context's arg and rest...
 			} catch(err){
-				// re-throw the error...
-				// NOTE: do not like that this can mask the location of 
-				// 		the original error.
-				if(!(err instanceof module.ParserError)){
-					throw err } 
-				// XXX should we report an error here???
-				parsed.printError(err)
-				res = err }
+				if(err instanceof module.ParserError){
+					err.arg = err.arg || arg
+					err.rest = err.rest || rest }
+				throw err }
 
 			// NOTE: we also need to handle the errors passed to us from 
 			// 		nested parsers...
 			res === module.STOP
 				&& parsed.stop(arg, rest)
+			// XXX revise -- do we need to re-handle errors???
 			res instanceof module.ParserError
 				&& handleError(res, arg, rest)
 			return res }
@@ -969,88 +976,100 @@ object.Constructor('Parser', {
 			rest.splice(0, 0, ...r)
 			return [ a, parsed.handler(a)[1] ] }
 
-		// parse/interpret the arguments and call handlers...
-		var values = new Set()
-		var seen = new Set()
-		var unhandled = parsed.unhandled = []
-		while(rest.length > 0){
-			var arg = rest.shift()
-			// non-string stuff in arg list...
-			if(typeof(arg) != typeof('str')){
-				unhandled.push(arg) 
-				continue }
-			// NOTE: opts and commands do not follow the same path here 
-			// 		because options if unidentified need to be split into
-			// 		single letter options and commands to not...
-			var [type, dfl] = opt_pattern.test(arg) ?
-					['opt', OPTION_PREFIX +'*']
-				: parsed.isCommand(arg) ?
-					['cmd', COMMAND_PREFIX +'*']
-				: ['unhandled']
-			// options / commands...
-			if(type != 'unhandled'){
-				// quote '-*' / '@*'...
-				arg = arg.replace(/^(.)\*$/, '$1\\*')
-				// get handler...
-				var handler = parsed.handler(arg)[1]
-					// handle merged options...
-					|| (type == 'opt' 
-						&& parsed.splitOptions
-						// NOTE: we set arg here...
-						&& ([arg, handler] = splitArgs(arg, rest))[1] )
-					// dynamic or error...
-					|| parsed.handler(dfl)[1]
-				// no handler found and '-*' or '@*' not defined...
-				if(handler == null){
-					return reportError(`Unknown ${ type == 'opt' ? 'option' : 'command:' } $ARG`, arg, rest) }
+		try{
+			// parse/interpret the arguments and call handlers...
+			var values = new Set()
+			var seen = new Set()
+			var unhandled = parsed.unhandled = []
+			while(rest.length > 0){
+				var arg = rest.shift()
+				// non-string stuff in arg list...
+				if(typeof(arg) != typeof('str')){
+					unhandled.push(arg) 
+					continue }
+				// NOTE: opts and commands do not follow the same path here 
+				// 		because options if unidentified need to be split into
+				// 		single letter options and commands to not...
+				var [type, dfl] = opt_pattern.test(arg) ?
+						['opt', OPTION_PREFIX +'*']
+					: parsed.isCommand(arg) ?
+						['cmd', COMMAND_PREFIX +'*']
+					: ['unhandled']
+				// options / commands...
+				if(type != 'unhandled'){
+					// quote '-*' / '@*'...
+					arg = arg.replace(/^(.)\*$/, '$1\\*')
+					// get handler...
+					var handler = parsed.handler(arg)[1]
+						// handle merged options...
+						|| (type == 'opt' 
+							&& parsed.splitOptions
+							// NOTE: we set arg here...
+							&& ([arg, handler] = splitArgs(arg, rest))[1] )
+						// dynamic or error...
+						|| parsed.handler(dfl)[1]
+					// no handler found and '-*' or '@*' not defined...
+					if(handler == null){
+						throw ParserError(`Unknown ${ type == 'opt' ? 'option' : 'command:' } $ARG`, arg) }
 
-				// mark handler...
-				;(handler.env || 'default' in handler)
-					&& values.add(handler)
-				seen.add(handler)
+					// mark handler...
+					;(handler.env || 'default' in handler)
+						&& values.add(handler)
+					seen.add(handler)
 
-				var res = runHandler(handler, arg, rest)
+					var res = runHandler(handler, arg, rest)
 
-				// handle stop conditions...
-				if(res === module.STOP 
-						|| res instanceof module.ParserError){
-					return nested ?
-						res
-						: parsed }
-				// finish arg processing now...
-				if(res === module.THEN){
-					break }
-				continue }
-			// unhandled...
-			unhandled.push(arg) }
-		// call value handlers with .env or .default values that were 
-		// not explicitly called yet...
-		// XXX an error, THEN or STOP returned from runHandler(..) in here will 
-		// 		not stop execution -- should it???
-		// XXX a ParserError thrown here will not be handled correctly 
-		// 		in the root parser...
-		parsed.optionsWithValue()
-			.forEach(function([k, a, d, handler]){
-				values.has(handler)	
-					|| (((typeof(process) != 'undefined' 
-								&& handler.env in process.env) 
-							|| handler.default)
-						&& seen.add(handler)
-						// XXX should we handle STOP / ParserError here???
-						&& runHandler(handler, 
-							[k[0], handler.default], 
-							rest)) })
+					// handle stop conditions...
+					if(res === module.STOP 
+							|| res instanceof module.ParserError){
+						return nested ?
+							res
+							: parsed }
+					// finish arg processing now...
+					if(res === module.THEN){
+						break }
+					continue }
+				// unhandled...
+				unhandled.push(arg) }
+			// call value handlers with .env or .default values that were 
+			// not explicitly called yet...
+			// XXX THEN or STOP returned from runHandler(..) in here will 
+			// 		not stop execution -- should it???
+			parsed.optionsWithValue()
+				.forEach(function([k, a, d, handler]){
+					values.has(handler)	
+						|| (((typeof(process) != 'undefined' 
+									&& handler.env in process.env) 
+								|| handler.default)
+							&& seen.add(handler)
+							&& runHandler(handler, 
+								[k[0], handler.default], 
+								rest)) })
 
-		// check and report required options...
-		var missing = parsed
-			.requiredOptions()
-				.filter(function([k, a, d, h]){
-					return !seen.has(h) })
-				.map(function([k, a, d, h]){
-					return k.pop() })
-		if(missing.length > 0){
-			reportError('required but missing: $ARG', missing.join(', '), rest)
-			return parsed }
+			// check and report required options...
+			var missing = parsed
+				.requiredOptions()
+					.filter(function([k, a, d, h]){
+						return !seen.has(h) })
+					.map(function([k, a, d, h]){
+						return k.pop() })
+			if(missing.length > 0){
+				throw module.ParserError(`required but missing: $ARG`, missing.join(', ')) }
+
+		// handle ParserError...
+		} catch(err){
+			// re-throw the error...
+			if(!(err instanceof module.ParserError)){
+				throw err } 
+
+			// report local errors...
+			// NOTE: non-local errors are threaded as return values...
+			parsed.printError(err) 
+			handleError(err, err.arg, rest)
+
+			return nested ?
+				err
+				: parsed }
 
 		// handle root value...
 		root_value = 

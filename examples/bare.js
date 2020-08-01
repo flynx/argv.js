@@ -3,7 +3,9 @@
 // compatible with both node's and RequireJS' require(..)
 var argv = require('../argv')
 
-var parser = argv.Parser({
+var parser = 
+exports.parser =
+argv.Parser({
 		// option definitions...
 		// ...
 	})
@@ -13,7 +15,7 @@ var parser = argv.Parser({
 	})
 
 // run the parser...
-__filename == require.main.filename
+__filename == (require.main || {}).filename
 	&& parser(process.argv)
 
 // vim:set ts=4 sw=4 spell :

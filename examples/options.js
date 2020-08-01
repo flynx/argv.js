@@ -2,7 +2,9 @@
 
 var argv = require('../argv')
 
-var parser = argv.Parser({
+var parser = 
+exports.parser =
+argv.Parser({
 	doc: 'Example script options',
 
 	// to make things consistent we'll take the version from package.json
@@ -71,6 +73,7 @@ var parser = argv.Parser({
 	},
 
 
+	// XXX this is misbehaving -- setting true instead of $HOME
 	'-home': {
 		doc: 'set home path',
 		arg: 'HOME | home',
@@ -145,7 +148,7 @@ var parser = argv.Parser({
 
 
 // run the parser...
-__filename == require.main.filename
+__filename == (require.main || {}).filename
 	&& parser()
 
 // vim:set ts=4 sw=4 spell :

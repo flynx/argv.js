@@ -14,6 +14,11 @@ var object = require('ig-object')
 var argv = require('./argv')
 
 
+var bare = module.bare = require('./examples/bare').parser
+var options = module.options = require('./examples/options').parser
+
+
+
 //---------------------------------------------------------------------
 
 
@@ -90,7 +95,7 @@ argv.Parser({
 		'-error': {
 			doc: 'throw an error',
 			handler: function(){
-				throw argv.ParserError('error') }},
+				throw argv.ParserError('error: $ARG') }},
 		'-passive-error': {
 			doc: 'throw an error',
 			handler: function(){
@@ -148,6 +153,16 @@ argv.Parser({
 		'-k': '-l',
 		'-l': '-m',
 		'-m': '-k',
+
+
+		'@bare': bare,
+		'@opts': options,
+
+
+		// collision test...
+		// NOTE: values of these will shadow the API...
+		'@options': {},
+		'-handler': {},
 	})
 	//.print(function(...args){
 	//	console.log('----\n', ...args)
