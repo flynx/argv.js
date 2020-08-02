@@ -544,16 +544,23 @@ object.Constructor('Parser', {
 			var sep = this.helpArgumentSeparator || ', '
 			var short = this.helpShortOptionSize || 1
 			var expandVars = this.expandTextVars.bind(this)
-			var formDoc = function(doc, handler){
+			var formDoc = function(doc, handler, arg){
 				var info = [
 					...(handler.required ?
-						['Required']
+						['required']
+						: []),
+					...(handler.valueRequired ?
+						['required value']
 						: []),
 					...('default' in handler ?
-						[`Default: ${handler.default}`]
+						[`default: ${handler.default}`]
 						: []),
 					...(handler.env ?
-						[`Env: \$${handler.env}`]
+						[`env: \$${handler.env}`]
+						: []),
+					...(handler instanceof Parser ?
+						//[`more: ${ that.scriptName } ${ arg.slice(1) } -h`]
+						[`more: .. ${ arg.slice(1) } -h`]
 						: []),
 				].join(', ')
 				return [doc.replace(/\\\*/g, '*'),
@@ -622,7 +629,7 @@ object.Constructor('Parser', {
 											[arg] 
 											: [])]
 										.join(that.helpValueSeparator), 
-									...formDoc(doc, handler) ] })),
+									...formDoc(doc, handler, opts.slice(-1)[0]) ] })),
 					// dynamic options...
 					...section('Dynamic options',
 						(this['-*'] && this['-*'].section_doc) ? 
@@ -642,7 +649,7 @@ object.Constructor('Parser', {
 											[arg] 
 											: [])]
 										.join(that.helpValueSeparator), 
-									...formDoc(doc, handler) ] })),
+									...formDoc(doc, handler, cmd.slice(-1)[0]) ] })),
 					// dynamic commands...
 					...section('Dynamic commands',
 						(this['@*'] && this['@*'].section_doc) ? 
