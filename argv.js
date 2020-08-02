@@ -77,6 +77,8 @@ module.ParserValueError =
 //
 module.normalizeIndent = object.normalizeIndent
 module.normalizeTextIndent = object.normalizeTextIndent
+module.doc = object.doc
+module.text = object.text
 
 
 // container for secondary/extra stuff...
