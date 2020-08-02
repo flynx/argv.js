@@ -21,6 +21,7 @@
 (function(require){ var module={} // make module AMD/node compatible...
 /*********************************************************************/
 
+var path = require('path')
 var object = require('ig-object')
 
 
@@ -133,11 +134,12 @@ function(name, pre, post){
 var getFromPackage = 
 module.extra.getFromPackage =
 function(attr){
+	var dir = path.dirname((require.main || {}).filename || '.')
 	return function(path){
 		try {
 			return require(path
 				|| this.packageJson
-				|| './package.json')[attr]
+				|| dir +'/package.json')[attr]
 		} catch(err){
 			return undefined } } }
 

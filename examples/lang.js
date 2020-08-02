@@ -106,5 +106,8 @@ argv.Parser({
 
 
 
+
+__filename == (require.main || {}).filename
+	&& parser()
 	
 // vim:set ts=4 sw=4 spell :
