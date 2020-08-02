@@ -130,6 +130,18 @@ function(name, pre, post){
 				: this) } }
 
 
+var getFromPackage = 
+module.extra.getFromPackage =
+function(attr){
+	return function(path){
+		try {
+			return require(path
+				|| this.packageJson
+				|| './package.json')[attr]
+		} catch(err){
+			return undefined } } }
+
+
 
 //---------------------------------------------------------------------
 // Basic argv parser...
@@ -300,6 +312,8 @@ object.Constructor('Parser', {
 	splitOptions: true,
 
 	requiredOptionPriority: 80,
+
+	packageJson: undefined,
 
 
 	// instance stuff...
@@ -508,13 +522,13 @@ object.Constructor('Parser', {
 	helpValueSeparator: '=',
 
 	// doc sections...
-	author: undefined,
-	license: undefined,
+	author: getFromPackage('author'),
+	license: getFromPackage('license'),
 	usage: '$SCRIPTNAME [OPTIONS]',
 	doc: undefined,
 	examples: undefined,
-	//footer: 'Written by $AUTHOR ($VERSION / $LICENSE).',
-	footer: undefined,
+	//footer: undefined,
+	footer: 'Written by: $AUTHOR\nVersion: $VERSION / License: $LICENSE',
 
 	// NOTE: this supports but does not requires the 'colors' module...
 	// XXX should wrap long lines...
@@ -528,10 +542,16 @@ object.Constructor('Parser', {
 				: [a, '\t'.repeat(opts_width)+ prefix + b])
 			: [a] },
 	expandTextVars: function(text){
+		var that = this
+		var get = function(attr, dfl){
+			return (typeof(that[attr]) == 'function' ?
+					that[attr]()
+					: that[attr])
+				|| dfl }
 		return text
-			.replace(/\$AUTHOR/g, this.author || 'Author')
-			.replace(/\$LICENSE/g, this.license || '')
-			.replace(/\$VERSION/g, this.version || '0.0.0')
+			.replace(/\$AUTHOR/g, get('author', 'Author'))
+			.replace(/\$LICENSE/g, get('license', ''))
+			.replace(/\$VERSION/g, get('version', '0.0.0'))
 			.replace(/\$SCRIPTNAME/g, this.scriptName) },
 
 	// NOTE: this will set .quiet to false...
@@ -685,7 +705,8 @@ object.Constructor('Parser', {
 	// Version...
 	//
 	// NOTE: this will set .quiet to false...
-	version: undefined,
+	//version: undefined,
+	version: getFromPackage('version'),
 
 	'-v': '-version',
 	'-version': {
@@ -693,7 +714,10 @@ object.Constructor('Parser', {
 		priority: 99,
 		handler: function(){
 			this.quiet = false
-			this.print(this.version || '0.0.0')
+			this.print((typeof(this.version) == 'function' ?
+					this.version()
+					: this.version)
+				|| '0.0.0')
 			return module.STOP }, },
 
 
