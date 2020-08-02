@@ -1,6 +1,6 @@
 {
   "name": "ig-argv",
-  "version": "2.10.1",
+  "version": "2.10.2",
   "description": "simple argv parser",
   "main": "argv.js",
   "scripts": {

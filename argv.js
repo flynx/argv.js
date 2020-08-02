@@ -133,13 +133,17 @@ function(name, pre, post){
 
 var getFromPackage = 
 module.extra.getFromPackage =
-function(attr){
-	var dir = path.dirname((require.main || {}).filename || '.')
-	return function(path){
+function(attr, func){
+	return function(p){
 		try {
-			return require(path
+			var res = require(p
 				|| this.packageJson
-				|| dir +'/package.json')[attr]
+				|| path.dirname(
+						(require.main || {}).filename || '.')
+				   	+'/package.json')[attr]
+			return func ?
+				func.call(this, res)
+				: res
 		} catch(err){
 			return undefined } } }
 
@@ -524,7 +528,11 @@ object.Constructor('Parser', {
 	helpValueSeparator: '=',
 
 	// doc sections...
-	author: getFromPackage('author'),
+	author: getFromPackage('author', 
+		function(o){
+			return typeof(o) != typeof('str') ?
+				Object.values(o).join(' ')
+				: o }),
 	license: getFromPackage('license'),
 	usage: '$SCRIPTNAME [OPTIONS]',
 	doc: undefined,
