@@ -203,8 +203,8 @@ Metadata:
 ```
 
 If not set, `.version`, `.author` and `.license` are acquired from `package.json` 
-located at the same path as the main script.  
-To explicitly set the path of the JSON file from which metadata is read set 
+located at the same path as the main script. To explicitly set the path of the 
+JSON file from which metadata is read set 
 [`<parser>.packageJson`](./ADVANCED.md#parserpackagejson).
 
 These basic bits of metadata can be referenced in other `-help` sections, 
