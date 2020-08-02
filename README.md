@@ -456,14 +456,15 @@ Options:
         -v,  --version          - show options.js verion and exit
         -q,  --quiet            - quiet mode
         -r,  --required         - set .required_option_given to true
-                                  (Required)
+                                  (required)
              --default=VALUE    - option with default value
-                                  (Default: some value)
+                                  (default: some value)
              --bool             - if given set .bool to true
              --value=X          - set .x to X
+                                  (required value)
              --int=INT          - pass an integer value
              --home=HOME        - set home path
-                                  (Env: $HOME)
+                                  (env: $HOME)
         -p,  --push=ELEM        - push elements to a .list
         -c                      - command
              --active           - basic active option
@@ -478,9 +479,11 @@ Options:
 Commands:
         command                 - command
         nested                  - nested
+                                  (more: .. nested -h)
         bare                    - bare
+                                  (more: .. bare -h)
 
-Written by John Smith <j.smith@some-mail.com> (2.8.1 / BSD-3-Clause).
+Written by John Smith <j.smith@some-mail.com> (2.9.4 / BSD-3-Clause).
 ### stopped at --help.
 ```
 
