@@ -13,18 +13,23 @@ argv.Parser({
 	author: 'John Smith <j.smith@some-mail.com>',
 	license: 'BSD-3-Clause',
 
-	footer: 'Written by $AUTHOR ($VERSION / $LICENSE).',
+	footer: 'Written by: $AUTHOR\nVersion: $VERSION / License: $LICENSE',
+	
 	
 	'-bool': {
-		doc: 'if given set .bool to true' },
+		doc: 'if given, set .bool to true' },
 
 
 	// option with a value...
 	'-value': {
 		doc: 'set .x to X',
 
-		// 'X' (VALUE) is used for -help while 'x' (key) is where the 
-		// value will be written...
+		// 'X' (i.e. VALUE) is used to indicate the option value in -help 
+		// while 'x' (key) is the attribute where the value will be written...
+		//
+		// NOTE: if no .arg is set option attribute name is used.
+		//
+		// See the first example in "Calling the script" section below for output.
 		arg: 'X | x',
 
 		// the value is optional by default but we can make it required...
@@ -50,7 +55,7 @@ argv.Parser({
 	},
 
 
-	'-int': {
+	'-i': {
 		doc: 'pass an integer value',
 
 		// NOTE: if not key is given the VALUE name is used as a key, so the 
@@ -73,10 +78,9 @@ argv.Parser({
 	},
 
 
-	// XXX this is misbehaving -- setting true instead of $HOME
 	'-home': {
 		doc: 'set home path',
-		arg: 'HOME | home',
+		arg: 'PATH | home_path',
 
 		// get the default value from the environment variable $HOME...
 		env: 'HOME',
@@ -112,6 +116,7 @@ argv.Parser({
 		// ...
 	},
 
+
 	'@nested': argv.Parser({
 			// ...
 		}).then(function(){
@@ -120,12 +125,14 @@ argv.Parser({
 	
 	'@bare': require('./bare').parser,
 
+
 	'-then': { 
 		handler: function(){
 			return argv.THEN } },
 	'-stop': { 
 		handler: function(){
 			return argv.STOP } },
+
 
 	'-error': {
 		handler: function(){

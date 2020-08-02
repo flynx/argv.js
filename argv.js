@@ -266,6 +266,14 @@ function(attr, func){
 // 			- isolate parsed from parser
 // 			- isolate option data from parser
 // 			- ...
+// XXX for this option:
+// 			'-verbose': {
+// 				env: 'VERBOSE',
+// 				handler: function(){
+// 					// ...
+// 				} },
+// 		need to be able to tell if -verbose was passed explicitly or not 
+// 		in the handler...
 // XXX should -help work for any command? ..not just nested parsers?
 // 		...should we indicate which thinks have more "-help"??
 var Parser =

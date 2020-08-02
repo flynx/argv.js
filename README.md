@@ -218,20 +218,33 @@ for example:
 
 These, if encountered, simply assign a value to an attribute on the parsed object.
 
-If no value is given `true` is assigned to indicate that the option/command is 
-present in the command-line.
+Any option/command can be passed a value, either explicitly (e.g. `-opt=123`) or 
+implicitly by first setting `.arg` (see examples below) and and then passing `-opt 123`.
+
+If no value is given `true` is assigned to option attribute on the parsed object 
+to indicate that the option/command is present in the command-line.
+
+Note that repeating a basic option/command will overwrite the previous value 
+unless `.collect` is set (see `-push` example below).
+
+Note that in general case option order in the command-line is not critical, 
+but option context can matter (see: [Active options/commands](#active-optionscommands) and [Nested parsers](#nested-parsers))
 
 ```javascript
 	'-bool': {
-		doc: 'if given set .bool to true' },
+		doc: 'if given, set .bool to true' },
 
 
 	// option with a value...
 	'-value': {
 		doc: 'set .x to X',
 
-		// 'X' (VALUE) is used for -help while 'x' (key) is where the 
-		// value will be written...
+		// 'X' (i.e. VALUE) is used to indicate the option value in -help 
+		// while 'x' (key) is the attribute where the value will be written...
+		//
+		// NOTE: if no .arg is set option attribute name is used.
+		//
+		// See the first example in "Calling the script" section below for output.
 		arg: 'X | x',
 
 		// the value is optional by default but we can make it required...
@@ -240,6 +253,9 @@ present in the command-line.
 
 
 	// setup an alias -r -> -required
+	//
+	// NOTE: aliases are used only for referencing, all naming is done via the 
+	//		actual option/command name.
 	'-r': '-required',
 
 	// a required option...
@@ -257,7 +273,7 @@ present in the command-line.
 	},
 
 
-	'-int': {
+	'-i': {
 		doc: 'pass an integer value',
 
 		// NOTE: if not key is given the VALUE name is used as a key, so the 
@@ -282,7 +298,7 @@ present in the command-line.
 
 	'-home': {
 		doc: 'set home path',
-		arg: 'HOME | home',
+		arg: 'PATH | home_path',
 
 		// get the default value from the environment variable $HOME...
 		env: 'HOME',
@@ -299,6 +315,10 @@ present in the command-line.
 		collect: 'list',
 	},
 ```
+
+For more info on available `.type` and `.collect` handlers see: 
+[`<option>.type`](#optiontype) and [`<option>.collect`](#optioncollect)
+respectively.
 
 
 ### Commands
@@ -338,6 +358,11 @@ And for quick-n-dirty hacking stuff together, a shorthand (_not for production u
 	},
 ```
 
+Option's `.handler(..)` only sees the `args` that follow it in the command line, 
+thus anything it may expect/get from the arguments must follow it (in the manner 
+it expects), `argv.js` poses no restrictions on full or partial manual handling
+of arguments by options/commands.
+
 
 ### Nested parsers
 
@@ -363,6 +388,10 @@ exits, then the parent parser will pick up where it left.
 
 Externally it is treated in exactly the same way as a normal _function_ handler, 
 essentially, the parent parser does not know the difference between the two.
+
+As with [Active options/commands](#active-optionscommands) the nested 
+parser (essentially an active option itself) only sees the arguments that 
+follow it in the command-line and may have arbitrary expectations of them.
 
 For more detail see the [Nested parsers](./ADVANCED.md#nested-parsers) section 
 in detailed docs.
@@ -471,8 +500,8 @@ Options:
              --bool             - if given set .bool to true
              --value=X          - set .x to X
                                   (required value)
-             --int=INT          - pass an integer value
-             --home=HOME        - set home path
+        -i=INT                  - pass an integer value
+             --home=PATH        - set home path
                                   (env: $HOME)
         -p,  --push=ELEM        - push elements to a .list
         -c                      - command
@@ -512,7 +541,7 @@ Parser {
   required_option_given: true,
   ...
   default: 'some value',
-  home: '...'
+  home_path: '...'
 }
 ```
 Notice the default values are set in the output above (output partially truncated
