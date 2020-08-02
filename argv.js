@@ -258,22 +258,14 @@ function(attr, func){
 // 		currently both '-' and '+' are supported.
 // NOTE: essentially this parser is a very basic stack language...
 //
-// XXX setting option value can overload and break existing API, for 
-// 		example:
+// XXX PROBLEM: setting option value can overload and break existing API, 
+// 		and break parsing, for example:
 // 			@options: {},
 // 		shadow .options(..) and break parsing...
 // 		...not sure how to handle this...
 // 			- isolate parsed from parser
 // 			- isolate option data from parser
 // 			- ...
-// XXX for this option:
-// 			'-verbose': {
-// 				env: 'VERBOSE',
-// 				handler: function(){
-// 					// ...
-// 				} },
-// 		need to be able to tell if -verbose was passed explicitly or not 
-// 		in the handler...
 // XXX should -help work for any command? ..not just nested parsers?
 // 		...should we indicate which thinks have more "-help"??
 var Parser =

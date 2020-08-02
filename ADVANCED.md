@@ -59,6 +59,8 @@ For basics see [README.md](./README.md)
 		- [`<parser>.handleErrorExit(..)`](#parserhandleerrorexit)
 		- [`<parser>.handle(..)`](#parserhandle)
 		- [`<parser>.setHandlerValue(..)`](#parsersethandlervalue)
+	- [External utilities](#external-utilities)
+		- [`normalizeIndent(..)` / `normalizeTextIndent(..)`](#normalizeindent--normalizetextindent)
 	- [More...](#more)
 
 
@@ -812,6 +814,13 @@ This is useful when extending `argv.js`, for client code values can be set
 directly.
 
 This is not intended for overloading.
+
+## External utilities
+
+### `normalizeIndent(..)` / `normalizeTextIndent(..)`
+
+`argv.js` uses and exposes [`object.js`](https://github.com/flynx/object.js)' 
+text normalization functions for convenient text/code formatting, see [original documentation](https://github.com/flynx/object.js#normalizeindent--normalizetextindent) for more info.
 
 
 ## More...

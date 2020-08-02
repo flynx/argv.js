@@ -22,22 +22,22 @@ This code is an evolution of that parser.
   nested contexts
 - Option expansion  
   `-abc` expands to `-a -b -c` if `-abc` is not defined
-- Option/command value passing  
+- Option/command value asignment  
   implicit `-a 123` (requires either _definition_ or manual handling) or 
   explicit `-a=123`
-- Environment variable option/command value defaults
+- Read option/command value defaults from environment variables
 - Option/command value conversion
 - Option/command value collection
-- Multiple option prefix support
+- Multiple option prefix support (by default `-` and `+` are handled)
+- Dynamic option/command handling
+- Customizable error and stop condition handling
 - Reasonable defaults:
-  - Metadata defaults to `package.json`
+  - Metadata read from `package.json`
   - `-help` &ndash; generate and print help
   - `-version` &ndash; print version
   - `-quiet` &ndash; suppress printing
   - `-` &ndash; stop argument processing
-- Extensible:
-  - Hooks for dynamic option/command handling
-  - Customizable error and stop condition handling
+- Extensible
 
 
 ### Planned
@@ -190,7 +190,10 @@ Basic script description
 ```javascript
 	doc: 'Example script options',
 ```
-	
+
+Note that `argv.js` exposes [object.js](https://github.com/flynx/object.js)'s 
+[`normalizeIndent(..)` / `normalizeTextIndent(..)`](https://github.com/flynx/object.js#normalizeindent--normalizetextindent) for convenient text/code formatting.
+
 Metadata:
 ```javascript
 	// to make things consistent we'll take the version from package.json
@@ -427,6 +430,11 @@ To stop option processing either return `STOP` or `THEN` from the handler.
 			handler: function(){
 				return argv.STOP } },
 	```
+
+	`STOP` is needed in cases where we want to stop the parser and not trigger 
+	it's main functionality (i.e. [`<parser>.then(..)`](./ADVANCED.md#parserthen)),
+	for example this is needed when printing `-help` and related tasks like 
+	listing commands and other script interface documentation/introspection.
 
 
 ### Error reporting
