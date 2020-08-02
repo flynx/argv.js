@@ -160,6 +160,9 @@ Options:
         -v,  --version          - show bare.js verion and exit
         -q,  --quiet            - quiet mode
         -                       - stop processing arguments after this point
+		
+Written by John Smith <j.smith@some-mail.com>
+Varsion: 0.0.1 / License: BSD-3-Clause
 ```
 
 ## Options in more detail
@@ -202,12 +205,12 @@ Metadata:
 If not set, `.version`, `.author`, `.license` are acquired from `package.json` 
 located at the same path as the main script.  
 To explicitly set the path of the JSON file from which metadata is read set 
-`.packageJson`.
+[`<parser>.packageJson`](./ADVANCED.md#parserpackagejson).
 
 These basic bits of metadata can be referenced in other `-help` sections, 
 for example:
 ```javascript
-	footer: 'Written by $AUTHOR ($VERSION / $LICENSE).',
+	footer: 'Written by: $AUTHOR\nVersion: $VERSION / License: $LICENSE',
 ```
 
 
@@ -489,7 +492,8 @@ Commands:
         bare                    - bare
                                   (more: .. bare -h)
 
-Written by John Smith <j.smith@some-mail.com> (2.9.4 / BSD-3-Clause).
+Written by John Smith <j.smith@some-mail.com>
+Varsion: 0.0.1 / License: BSD-3-Clause
 ### stopped at --help.
 ```
 
@@ -548,6 +552,9 @@ Options:
         -v,  --version          - show options.js nested verion and exit
         -q,  --quiet            - quiet mode
         -                       - stop processing arguments after this point
+
+Written by John Smith <j.smith@some-mail.com>
+Varsion: 0.0.1 / License: BSD-3-Clause
 ### stopped at nested.
 ```
 
