@@ -160,7 +160,7 @@ Options:
         -v,  --version          - show bare.js verion and exit
         -q,  --quiet            - quiet mode
         -                       - stop processing arguments after this point
-		
+
 Written by John Smith <j.smith@some-mail.com>
 Varsion: 0.0.1 / License: BSD-3-Clause
 ```
@@ -202,7 +202,7 @@ Metadata:
 	license: 'BSD-3-Clause',
 ```
 
-If not set, `.version`, `.author`, `.license` are acquired from `package.json` 
+If not set, `.version`, `.author` and `.license` are acquired from `package.json` 
 located at the same path as the main script.  
 To explicitly set the path of the JSON file from which metadata is read set 
 [`<parser>.packageJson`](./ADVANCED.md#parserpackagejson).
