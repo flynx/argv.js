@@ -1005,17 +1005,17 @@ object.Constructor('Parser', {
 					&& parsed.handleArgumentValue) ?
 				parsed.handleArgumentValue(handler, value)
 				: value
-			// required value check...
-			if(handler.valueRequired && value == null){
-				throw module.ParserValueError('Value missing: ${ arg }=?') }
 
-			// do not call the handler if value is implicitly undefined...
-			if(value === undefined
-					&& mode == 'implicit'){
-				return }
-			
-			// run handler...
 			try {
+				// required value check...
+				if(handler.valueRequired && value == null){
+					throw module.ParserValueError('Value missing: $ARG=?') }
+
+				// do not call the handler if value is implicitly undefined...
+				if(value === undefined
+						&& mode == 'implicit'){
+					return }
+			
 				var res = parsed.handle(handler, rest, arg, value)
 
 			// update error object with current context's arg and rest...

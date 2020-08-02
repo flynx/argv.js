@@ -214,17 +214,21 @@ for example:
 
 ### Basic options
 
-These, if encountered, simply assign a value to an attribute on the parsed object.
+These, if encountered, simply assign a value to an attribute on the parsed object. 
+This attribute's name is defined by the option name (without the prefix) or by 
+setting [`<option>.arg`](#optionarg)'s `<key>`.  
 
 Any option/command can be passed a value, either explicitly (e.g. `-opt=123`) or 
-implicitly by first setting `.arg` (see examples below) and and then passing `-opt 123`.
+implicitly by first setting [`<option>.arg`](#optionarg)'s `<arg-name>` component 
+and and then passing `-opt 123`.  
+
+Option/command values can be set on the command-line as well as via 
+[`<option>.env`](./ADVANCED.md#optionenv) and/or 
+[`<option>.default`](./ADVANCED.md#optiondefault).
 
 If option is given but no value is set, `undefined` is assigned to option 
 attribute on the parsed object to indicate that the option/command is present 
 in the command-line.  
-Note that values can be set on the command-line as well as via 
-[`<option>.env`](./ADVANCED.md#optionenv) and/or 
-[`<option>.default`](./ADVANCED.md#optiondefault) see examples below.
 
 Note that repeating a basic option/command will overwrite the previous occurrences'
 value unless `.collect` is set (see `-push` example below).
