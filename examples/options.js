@@ -16,8 +16,8 @@ argv.Parser({
 	footer: 'Written by: $AUTHOR\nVersion: $VERSION / License: $LICENSE',
 	
 	
-	'-bool': {
-		doc: 'if given, set .bool to true' },
+	'-flag': {
+		doc: 'if given, set .bool' },
 
 
 	// option with a value...
@@ -47,6 +47,8 @@ argv.Parser({
 		// NOTE: we can omit the VALUE part to not require a value...
 		// NOTE: of no attr is specified in arg option name is used.
 		arg: '| required_option_given',
+
+		default: true,
 
 		// NOTE: by default required options/commands are sorted above normal
 		//		options but bellow -help/-version/-quiet/...

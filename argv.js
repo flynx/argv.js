@@ -463,9 +463,9 @@ object.Constructor('Parser', {
 	// 		delegate option processing to a different option.
 	// 		(see '-?' for a usage example)
 	// NOTE: this will not handle anything outside of handler call
-	handle: function(handler, rest, key, value){
+	handle: function(handler, rest, key, value, mode){
 		// got flag as handler...
-		[key, handler] = 
+		;[key, handler] = 
 			typeof(handler) == typeof('str') ?
 				this.handler(handler)
 			: [key, handler]
@@ -748,7 +748,8 @@ object.Constructor('Parser', {
 	'-q': '-quiet',
 	'-quiet': {
 		priority: 99,
-		doc: 'quiet mode', },
+		doc: 'quiet mode', 
+		default: true, },
 
 
 	// Stop argument processing...
@@ -865,11 +866,8 @@ object.Constructor('Parser', {
 			// get the final key...
 			|| this.handler(key)[0].slice(1)
 		// if value not given set true and handle...
-		//this[key] = arguments.length < 3 ?
-		value = arguments.length < 3 ?
-			(this.handleArgumentValue ?
-				this.handleArgumentValue(handler, true)
-				: true)
+		value = this.handleArgumentValue ?
+			this.handleArgumentValue(handler, value)
 			: value
 
 		this[attr] = this._handleValue(handler, 
@@ -981,18 +979,22 @@ object.Constructor('Parser', {
 			parsed.error(reason, arg, rest)
 			parsed.handleErrorExit
 				&& parsed.handleErrorExit(arg, reason) }
-		var runHandler = function(handler, arg, rest){
+		var runHandler = function(handler, arg, rest, mode){
 			var [arg, value] = arg instanceof Array ?
 				arg
 				: arg.split(/=/)
+			var env = handler.env 
+				&& handler.env.replace(/^\$/, '')
 			// get value...
 			value = value == null ?
 				((parsed.hasArgument(handler) 
 								&& rest.length > 0
 								&& !opt_pattern.test(rest[0])) ?
 							rest.shift()
-						: (typeof(process) != 'undefined' && handler.env) ?
-							process.env[handler.env.replace(/^\$/, '')]
+						: (typeof(process) != 'undefined' 
+								&& env
+								&& env in process.env) ?
+							process.env[env]
 						: value)
 				: value
 			value = value == null ?
@@ -1007,6 +1009,11 @@ object.Constructor('Parser', {
 			if(handler.valueRequired && value == null){
 				throw module.ParserValueError('Value missing: ${ arg }=?') }
 
+			// do not call the handler if value is implicitly undefined...
+			if(value === undefined
+					&& mode == 'implicit'){
+				return }
+			
 			// run handler...
 			try {
 				var res = parsed.handle(handler, rest, arg, value)
@@ -1056,6 +1063,7 @@ object.Constructor('Parser', {
 			while(rest.length > 0 || (values.size || values.length) > 0){
 				// explicitly passed options...
 				if(rest.length > 0){
+					var mode = 'explicit'
 					var arg = rest.shift()
 					// non-string stuff in arg list...
 					if(typeof(arg) != typeof('str')){
@@ -1094,13 +1102,14 @@ object.Constructor('Parser', {
 
 				// implicit options -- with .env and or .default set...
 				} else {
+					var mode = 'implicit'
 					values = values instanceof Map ?
 						[...values]
 						: values
 					var [handler, arg] = values.shift() }
 
 
-				var res = runHandler(handler, arg, rest)
+				var res = runHandler(handler, arg, rest, mode)
 
 				// handle stop conditions...
 				if(res === module.STOP 

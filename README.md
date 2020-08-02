@@ -98,7 +98,8 @@ Parser(..) -> <parser>(..) -> <parsed>
 	<parser>(...)
 		-> <parsed>
 	```
-	- option handlers (defined in `<spec>`) are called while parsing,
+	- arguments are handled in order of occurrence,
+	- argument handlers (defined in `<spec>`) are called while parsing,
 	- then/stop/error `<callback>`'s are called after the `<parser>` is done,
 	- everything is run in the _context_ of the `<parsed>` object so any
 	  data set on it is accessible after parsing is done for further
@@ -218,18 +219,22 @@ These, if encountered, simply assign a value to an attribute on the parsed objec
 Any option/command can be passed a value, either explicitly (e.g. `-opt=123`) or 
 implicitly by first setting `.arg` (see examples below) and and then passing `-opt 123`.
 
-If no value is given `true` is assigned to option attribute on the parsed object 
-to indicate that the option/command is present in the command-line.
+If option is given but no value is set, `undefined` is assigned to option 
+attribute on the parsed object to indicate that the option/command is present 
+in the command-line.  
+Note that values can be set on the command-line as well as via 
+[`<option>.env`](./ADVANCED.md#optionenv) and/or 
+[`<option>.default`](./ADVANCED.md#optiondefault) see examples below.
 
-Note that repeating a basic option/command will overwrite the previous value 
-unless `.collect` is set (see `-push` example below).
+Note that repeating a basic option/command will overwrite the previous occurrences'
+value unless `.collect` is set (see `-push` example below).
 
-Note that in general case option order in the command-line is not critical, 
+Note that in the general case option order in the command-line is not critical, 
 but option context can matter (see: [Active options/commands](#active-optionscommands) and [Nested parsers](#nested-parsers))
 
 ```javascript
-	'-bool': {
-		doc: 'if given, set .bool to true' },
+	'-flag': {
+		doc: 'if given, set .flag' },
 
 
 	// option with a value...
@@ -262,6 +267,8 @@ but option context can matter (see: [Active options/commands](#active-optionscom
 		// NOTE: we can omit the VALUE part to not require a value...
 		// NOTE: of no attr is specified in arg option name is used.
 		arg: '| required_option_given',
+
+		default: true,
 
 		// NOTE: by default required options/commands are sorted above normal
 		//		options but bellow -help/-version/-quiet/...
@@ -354,6 +361,11 @@ And for quick-n-dirty hacking stuff together, a shorthand (_not for production u
 		// ...
 	},
 ```
+
+The `.handler(..)` will get called if the option is present in the command-line,
+if either `.default` is not `undefined` or if `.env` and its environment
+variable are defined, or any combination of the above. And vice-versa, if none 
+of the above conditions are met the `.handler(..)` will not be called.
 
 Option's `.handler(..)` only sees the `args` that follow it in the command line, 
 thus anything it may expect/get from the arguments must follow it (in the manner 
@@ -494,7 +506,7 @@ Options:
                                   (required)
              --default=VALUE    - option with default value
                                   (default: some value)
-             --bool             - if given set .bool to true
+             --flag             - if given set .flag
              --value=X          - set .x to X
                                   (required value)
         -i=INT                  - pass an integer value

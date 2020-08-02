@@ -89,6 +89,15 @@ argv.Parser({
 		'-sh': {
 			doc: 'short option', },
 
+		'-env': {
+			doc: 'env value',
+			arg: 'VALUE | env_value',
+			env: 'VALUE',
+
+			//default: 5,
+			handler: function(args, key, value){ console.log('GOT ENV:', value) },
+		},
+
 		'-type-error': {
 			doc: 'throw a type error',
 			type: 'error', 
