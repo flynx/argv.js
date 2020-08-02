@@ -137,7 +137,9 @@ function(attr, func){
 	return function(p){
 		try {
 			var res = require(p
-				|| this.packageJson
+				|| (typeof(this.packageJson) == 'function' ?
+					this.packageJson()
+					: this.packageJson)
 				|| path.dirname(
 						(require.main || {}).filename || '.')
 				   	+'/package.json')[attr]

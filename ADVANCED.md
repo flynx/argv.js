@@ -35,7 +35,9 @@ For basics see [README.md](./README.md)
 				- [Automatically defined values](#automatically-defined-values)
 				- [`<parser>.doc`](#parserdoc)
 				- [`<parser>.usage`](#parserusage)
+				- [`<parser>.packageJson`](#parserpackagejson)
 				- [`<parser>.version`](#parserversion)
+				- [`<parser>.author`](#parserauthor)
 				- [`<parser>.license`](#parserlicense)
 				- [`<parser>.examples`](#parserexamples)
 				- [`<parser>.footer`](#parserfooter)
@@ -460,20 +462,46 @@ Basic usage hint.
 Default value: `"$SCRIPTNAME [OPTIONS]"`
 
 
+##### `<parser>.packageJson`
+
+The path to the metadata JSON file.
+
+    <spec>.packageJson = <string> | <function> | undefined
+
+If not set `package.json` will be searched for in the same directory as the 
+main script.
+
+Default value: `undefined`.
+
 ##### `<parser>.version`
+
 Version number.
 
     <spec>.usage = <string> | <function> | undefined
 
-If this is not defined `-version` will print `"0.0.0"`.
+If this is not defined it will be read from the project metadata, if none is 
+found `"0.0.0"` will be printed by `-version`.
 
 Default value: `undefined`
 
 
+##### `<parser>.author`
+
+Author name/contacts.
+
+    <spec>.author = <string> | <function> | undefined
+
+If not set project metadata is used, if found.
+
+Default value: `undefined`
+
 ##### `<parser>.license`
+
 Short license information.
 
     <spec>.usage = <string> | <function> | undefined
+
+If not set project metadata is used, if found.
 
 Default value: `undefined`
 

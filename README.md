@@ -30,6 +30,7 @@ This code is an evolution of that parser.
 - Option/command value collection
 - Multiple option prefix support
 - Reasonable defaults:
+  - Metadata defaults to `package.json`
   - `-help` &ndash; generate and print help
   - `-version` &ndash; print version
   - `-quiet` &ndash; suppress printing
@@ -197,6 +198,11 @@ Metadata:
 	author: 'John Smith <j.smith@some-mail.com>',
 	license: 'BSD-3-Clause',
 ```
+
+If not set, `.version`, `.author`, `.license` are acquired from `package.json` 
+located at the same path as the main script.  
+To explicitly set the path of the JSON file from which metadata is read set 
+`.packageJson`.
 
 These basic bits of metadata can be referenced in other `-help` sections, 
 for example:
