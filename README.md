@@ -1,21 +1,21 @@
 # argv.js
 
-Simple argv parser
+Simple yet complete argv parser
 
 
 ## Motivation
 
 I needed a new argv parser for a quick and dirty project I was working 
 on and evaluating and selecting the proper existing parser and then 
-learning its API, quirks and adapting the architecture to it seemed 
-to be more complicated, require more effort and far less fun than 
-putting together a trivial parser myself in a couple of hours.  
+learning its API, quirks and adapting the project architecture to it 
+seemed to be more complicated, require more effort and far less fun 
+than putting together a trivial parser myself in a couple of hours.  
 This code is an evolution of that parser.
 
 
 ## Features
 
-- Simple
+- Simple / well documented
 - Supports both the _option_ (a-la `ls`) and _command_ (a-la `git`) paradigms
 - Nestable  
   parsers can be nested as option/command handlers defining independent 
@@ -23,8 +23,8 @@ This code is an evolution of that parser.
 - Option expansion  
   `-abc` expands to `-a -b -c` if `-abc` is not defined
 - Option/command value passing  
-  implicit `-a 123` (requires definition or manual handling) or explicit 
-  `-a=123`
+  implicit `-a 123` (requires either _definition_ or manual handling) or 
+  explicit `-a=123`
 - Environment variable option/command value defaults
 - Option/command value conversion
 - Option/command value collection
@@ -56,8 +56,7 @@ This code is an evolution of that parser.
 		- [Planned](#planned)
 	- [Contents](#contents)
 	- [Architecture](#architecture)
-	- [Installation](#installation)
-	- [Basics](#basics)
+	- [Basics and quick start](#basics-and-quick-start)
 	- [Options in more detail](#options-in-more-detail)
 		- [Help and metadata](#help-and-metadata)
 		- [Basic options](#basic-options)
@@ -112,13 +111,12 @@ The `<parsed>` object has the `<parser>` as its `.__proto__`.
 
 
 
-## Installation
+## Basics and quick start
 
+To install:
 ```shell_session
-$ npm install ig-argv
+$ npm install --save ig-argv
 ```
-
-## Basics
 
 Create a [bare.js](./examples/bare.js) script and make it runnable
 ```shell_session
@@ -130,7 +128,6 @@ Now for the code
 ```javascript
 #!/usr/bin/env node
 
-// compatible with both node's and RequireJS' require(..)
 var argv = require('ig-argv')
 
 var parser = 
