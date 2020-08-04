@@ -270,6 +270,7 @@ function(attr, func){
 // 			- ...
 // XXX should -help work for any command? ..not just nested parsers?
 // 		...should we indicate which thinks have more "-help"??
+// XXX test this...
 var Parser =
 module.Parser =
 object.Constructor('Parser', {
