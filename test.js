@@ -37,8 +37,7 @@ argv.Parser({
 
 		'-verbose': function(){
 			console.log('>>> VERBOSE:', ...arguments)
-			return 'verbose'
-		},
+			return 'verbose' },
 
 		'-c': '@command',
 		'@cmd': '@command',
@@ -46,8 +45,7 @@ argv.Parser({
 			priority: -50,
 			handler: function(){
 				console.log('>>> COMMAND:', ...arguments)
-				return 'command'
-			},
+				return 'command' },
 		},
 
 		'-r': '-required',
