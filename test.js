@@ -22,6 +22,26 @@ var lang = module.lang = require('./examples/lang').parser
 
 //---------------------------------------------------------------------
 
+var setups = {
+	bare: require('./examples/bare').parser,
+	options: require('./examples/options').parser,
+	lang: require('./examples/lang').parser,
+}
+
+var modifiers = {
+}
+
+var tests = {
+}
+
+
+var cases = {
+}
+
+
+
+//---------------------------------------------------------------------
+
 
 argv.Parser.typeHandlers.error = function(){
 	throw new argv.ParserTypeError('type error') }

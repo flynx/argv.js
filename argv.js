@@ -580,18 +580,23 @@ object.Constructor('Parser', {
 			var short = this.helpShortOptionSize || 1
 			var expandVars = this.expandTextVars.bind(this)
 			var formDoc = function(doc, handler, arg){
+				var dfl = getValue(handler, 'default')[1]
+				var req = getValue(handler, 'required')[1]
+				var val_req = getValue(handler, 'valueRequired')[1]
+				var env = getValue(handler, 'env')[1]
+
 				var info = [
-					...(handler.required ?
+					...(req ?
 						['required']
 						: []),
-					...(handler.valueRequired ?
+					...(val_req ?
 						['required value']
 						: []),
-					...('default' in handler ?
-						[`default: ${handler.default}`]
+					...(dfl ?
+						[`default: ${dfl}`]
 						: []),
-					...(handler.env ?
-						[`env: \$${handler.env}`]
+					...(env ?
+						[`env: \$${env}`]
 						: []),
 					...(handler instanceof Parser ?
 						//[`more: ${ that.scriptName } ${ arg.slice(1) } -h`]
