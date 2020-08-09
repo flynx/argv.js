@@ -616,7 +616,7 @@ object.Constructor('Parser', {
 					: src
 				return src[name] ?
 					['', typeof(src[name]) == 'function' ?
-						src[name]()
+						src[name].call(that)
 						: src[name]]
 		   			: [] }
 			var section = function(title, items){

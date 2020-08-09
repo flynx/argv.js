@@ -133,7 +133,8 @@ argv.Parser({
 		'-test': argv.Parser({
 			env: 'TEST',
 			arg: 'TEST',
-			default: 'moo',
+			default: function(){
+				return this['-value'].default },
 		}).then(function(){
 			console.log('TEST', ...arguments) }),
 
