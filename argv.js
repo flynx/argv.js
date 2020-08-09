@@ -939,6 +939,7 @@ object.Constructor('Parser', {
 	// NOTE: this (i.e. parser) can be used as a nested command/option 
 	// 		handler...
 	__call__: function(context, argv, main, root_value){
+		var that = this
 		var parsed = Object.create(this)
 		var opt_pattern = parsed.optionInputPattern
 		var rest = parsed.rest = 
@@ -998,7 +999,9 @@ object.Constructor('Parser', {
 						: value)
 				: value
 			value = value == null ?
-				handler.default
+				typeof(handler.default) == 'function' ?
+					handler.default.call(that)
+					: handler.default
 				: value
 			// value conversion...
 			value = (value != null 
