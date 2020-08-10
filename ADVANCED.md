@@ -162,6 +162,12 @@ to control further parsing and/or execution.
 #### `<option>.doc`
 
 Option/command documentation string used in `-help`.
+```
+doc: <string> | <array-of-strings>,
+```
+
+If an array of strings is given each string will be printed on a separate 
+line.
 
 If this is set to `false` the option will be hidden from `-help`.
 

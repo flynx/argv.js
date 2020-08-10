@@ -585,6 +585,11 @@ object.Constructor('Parser', {
 				var val_req = getValue(handler, 'valueRequired')[1]
 				var env = getValue(handler, 'env')[1]
 
+				doc = (doc instanceof Array ?
+						doc
+						: [doc])
+					.map(function(s){
+						return s.replace(/\\\*/g, '*') })
 				var info = [
 					...(req ?
 						['required']
@@ -603,7 +608,9 @@ object.Constructor('Parser', {
 						[`more: .. ${ arg.slice(1) } -h`]
 						: []),
 				].join(', ')
-				return [doc.replace(/\\\*/g, '*'),
+
+				return [
+					...doc,
 					...(info.length > 0 ?
 						['('+ info +')']
 						: [])] }

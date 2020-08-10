@@ -22,7 +22,9 @@ argv.Parser({
 
 	// option with a value...
 	'-value': {
-		doc: 'set .x to X',
+		doc: [
+			'set .x to X',
+			'NOTE: .doc can be multiple lies'],
 
 		// 'X' (i.e. VALUE) is used to indicate the option value in -help 
 		// while 'x' (key) is the attribute where the value will be written...

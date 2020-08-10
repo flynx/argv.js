@@ -246,7 +246,9 @@ but option context can matter (see: [Active options/commands](#active-optionscom
 
 	// option with a value...
 	'-value': {
-		doc: 'set .x to X',
+		doc: [
+			'set .x to X',
+			'NOTE: .doc can be multiple lines'],
 
 		// 'X' (i.e. VALUE) is used to indicate the option value in -help 
 		// while 'x' (key) is the attribute where the value will be written...
@@ -520,6 +522,7 @@ Options:
                                   (default: some value)
              --flag             - if given set .flag
              --value=X          - set .x to X
+			 					  NOTE: .doc can be multiple lines
                                   (required value)
         -i=INT                  - pass an integer value
              --home=PATH        - set home path
