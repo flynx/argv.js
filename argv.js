@@ -459,6 +459,7 @@ object.Constructor('Parser', {
 	// 		(see '-?' for a usage example)
 	// NOTE: this will not handle anything outside of handler call
 	handle: function(handler, rest, key, value, mode){
+		var orig_key = key
 		// got flag as handler...
 		;[key, handler] = 
 			typeof(handler) == typeof('str') ?
@@ -472,11 +473,12 @@ object.Constructor('Parser', {
 						return this.handlerDefault(handler, ...args) }))
 			.call(this, 
 				rest, 
-				key,
+				orig_key,
 				...(value != null ? 
 					[value] 
 					: [])) 
 		// special-case: nested parser -> set results object to .<arg>...
+		// XXX should we use key or orig_key here???
 		if(handler instanceof Parser){
 			res.unhandled
 				&& this.unhandled.splice(this.unhandled.length, 0, ...res.unhandled)
