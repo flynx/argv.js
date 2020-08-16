@@ -1,6 +1,6 @@
 {
   "name": "ig-argv",
-  "version": "2.13.0",
+  "version": "2.13.1",
   "description": "simple argv parser",
   "main": "argv.js",
   "scripts": {
@@ -24,6 +24,6 @@
   "homepage": "https://github.com/flynx/argv.js#readme",
   "dependencies": {
     "colors": "^1.4.0",
-    "ig-object": "^5.1.15"
+    "ig-object": "^5.2.6"
   }
 }

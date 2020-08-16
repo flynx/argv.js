@@ -967,10 +967,10 @@ object.Constructor('Parser', {
 			main = context.scriptName +' '+ main 
 			rest.unshift(main) }
 		// normalize the argv...
-		if(main != null){
-			rest.splice(0, rest.indexOf(main))
-			rest.includes(main)
-				|| rest.unshift(main) }
+		if(main != null && rest[0] == process.execPath){
+			rest.splice(0, 2)
+			rest.unshift(main) }
+
 		// script stuff...
 		var script = parsed.script = rest.shift()
 		var basename = script.split(/[\\\/]/).pop() 
