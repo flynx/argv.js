@@ -10,6 +10,7 @@
 
 var colors = require('colors')
 var object = require('ig-object')
+var test = require('ig-test')
 
 var argv = require('./argv')
 
@@ -22,21 +23,21 @@ var lang = module.lang = require('./examples/lang').parser
 
 //---------------------------------------------------------------------
 
-var setups = {
+test.Setups({
 	bare: require('./examples/bare').parser,
 	options: require('./examples/options').parser,
 	lang: require('./examples/lang').parser,
-}
+})
 
-var modifiers = {
-}
+test.Modifiers({
+})
 
-var tests = {
-}
+test.Tests({
+})
 
 
-var cases = {
-}
+test.Cases({
+})
 
 
 
@@ -227,6 +228,7 @@ typeof(__filename) != 'undefined'
 	&& __filename == (require.main || {}).filename
 	&& console.log(p())
 	//&& console.log(lang())
+	//&& test.run()
 
 
 

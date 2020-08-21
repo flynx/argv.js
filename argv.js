@@ -947,6 +947,9 @@ object.Constructor('Parser', {
 	// 		all the parse data...
 	// NOTE: this (i.e. parser) can be used as a nested command/option 
 	// 		handler...
+	//
+	// XXX need to get the name of the command define in package.json's 
+	// 		run key...
 	__call__: function(context, argv, main, root_value){
 		var that = this
 		var parsed = Object.create(this)
