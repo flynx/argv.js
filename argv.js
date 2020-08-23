@@ -922,11 +922,13 @@ object.Constructor('Parser', {
 	//
 	//	.onArgs(callback(args))
 	//
-	//	.onNoArgs(callback())
+	//	.onNoArgs(callback(args))
 	//
+	//
+	// NOTE: args is mutable and thus can be modified here affecting 
+	// 		further parsing.
 	onArgs: afterCallback('onArgs'),
 	onNoArgs: afterCallback('onNoArgs'),
-	
 
 	// Post-parsing callbacks...
 	//
@@ -999,6 +1001,7 @@ object.Constructor('Parser', {
 			script.length - parsed.scriptName.length)
 
 		// call the pre-parse handlers...
+		// NOTE: these can modify the mutable rest if needed...
 		rest.length == 0 ?
 			this.onNoArgs(rest)
 			: this.onArgs(rest)
