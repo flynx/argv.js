@@ -1,6 +1,6 @@
 {
   "name": "ig-argv",
-  "version": "2.13.2",
+  "version": "2.14.0",
   "description": "simple argv parser",
   "main": "argv.js",
   "scripts": {
@@ -28,5 +28,6 @@
   "devDependencies": {
     "colors": "^1.4.0",
     "ig-test": "^1.4.3"
-  }
+  },
+  "vim-cfg": " vim:set ts=2 sw=2 expandtab : "
 }

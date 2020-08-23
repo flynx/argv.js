@@ -47,6 +47,8 @@ For basics see [README.md](./README.md)
 		- [`THEN` / `STOP`](#then--stop)
 		- [`ParserError(..)`](#parsererror)
 		- [`Parser(..)`](#parser)
+			- [`<parser>.onArgs(..)`](#parseronargs)
+			- [`<parser>.onNoArgs(..)`](#parseronnoargs)
 			- [`<parser>.then(..)`](#parserthen)
 			- [`<parser>.stop(..)`](#parserstop)
 			- [`<parser>.error(..)`](#parsererror-1)
@@ -641,6 +643,38 @@ Parser(<spec>)
 ```
 
 See [`<parser>(..)`](#parser-1) for more info.
+
+
+#### `<parser>.onArgs(..)`
+
+Add callback triggered when one or more arguments are passed to the parser.
+```
+<parser>.onArgs(<callback>)
+	-> <parser>
+```
+
+```
+callback(<args>)
+	-> <obj>
+```
+
+Note that this is triggered _before_ parsing begins.
+
+
+#### `<parser>.onNoArgs(..)`
+
+Add callback triggered when no arguments are passed to the parser.
+```
+<parser>.onNoArgs(<callback>)
+	-> <parser>
+```
+
+```
+callback(<args>)
+	-> <obj>
+```
+
+Note that this is triggered _before_ parsing begins.
 
 
 #### `<parser>.then(..)`

@@ -15,6 +15,9 @@
 * Repo and docs:
 * 	https://github.com/flynx/argv.js
 *
+* TODO:
+* 	.onNoArgs(..) / onArgs(..) callbacks...
+*
 *
 **********************************************************************/
 ((typeof define)[0]=='u'?function(f){module.exports=f(require)}:define)
@@ -95,8 +98,12 @@ module.extra = {}
 //		-> func
 //
 //
-//	func(..)
+//	Bind a callback...
+//	func(callback)
 //		-> this
+//
+//	Trigger callbacks...
+//	func(..)
 //		-> res 
 //
 //	pre_action(...args)
@@ -911,7 +918,17 @@ object.Constructor('Parser', {
 		return this },
 
 
-	// Post parsing callbacks...
+	// Pre-parsing callbacks...
+	//
+	//	.onArgs(callback(args))
+	//
+	//	.onNoArgs(callback())
+	//
+	onArgs: afterCallback('onArgs'),
+	onNoArgs: afterCallback('onNoArgs'),
+	
+
+	// Post-parsing callbacks...
 	//
 	// 	.then(callback(unhandled, root_value, rest))
 	//
@@ -954,6 +971,7 @@ object.Constructor('Parser', {
 		var that = this
 		var parsed = Object.create(this)
 		var opt_pattern = parsed.optionInputPattern
+		// prep argv...
 		var rest = parsed.rest = 
 			argv == null ?
 				(typeof(process) != 'unhandled' ?
@@ -973,13 +991,17 @@ object.Constructor('Parser', {
 		if(main != null && rest[0] == process.execPath){
 			rest.splice(0, 2)
 			rest.unshift(main) }
-
 		// script stuff...
 		var script = parsed.script = rest.shift()
 		var basename = script.split(/[\\\/]/).pop() 
 		parsed.scriptName = parsed.scriptName || basename
 		parsed.scriptPath = script.slice(0, 
 			script.length - parsed.scriptName.length)
+
+		// call the pre-parse handlers...
+		rest.length == 0 ?
+			this.onNoArgs(rest)
+			: this.onArgs(rest)
 
 		// helpers...
 		// XXX should this pass the error as-is to the API???

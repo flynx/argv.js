@@ -148,16 +148,17 @@ argv.Parser({
 		handler: function(){
 			throw 'something went really wrong.' } },
 })
+.onArgs(function(args){
+  console.log('### input arguments:', args) })
+.onNoArgs(function(args){
+  console.log('### no arguments passed.') })
 .then(function(unhandled, root_value, rest){
 	console.log('### finished normally.')
-	console.log(this)
-})
+	console.log(this) })
 .stop(function(arg, rest){
-	console.log(`### stopped at ${arg}.`)
-})
+	console.log(`### stopped at ${arg}.`) })
 .error(function(reason, arg, rest){
-	console.log(`### something went wrong when parsing ${arg}.`)
-})
+	console.log(`### something went wrong when parsing ${arg}.`) })
 
 
 // run the parser...

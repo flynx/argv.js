@@ -65,6 +65,7 @@ This code is an evolution of that parser.
 		- [Nested parsers](#nested-parsers)
 		- [Stopping](#stopping)
 		- [Error reporting](#error-reporting)
+		- [Before parsing begins](#before-parsing-begins)
 		- [Handling the result](#handling-the-result)
 		- [Calling the script](#calling-the-script)
 	- [Advanced docs](#advanced-docs)
@@ -478,6 +479,25 @@ And to close things off for the `<spec>` ;)
 ```javascript
 })
 ```
+
+### Before parsing begins
+
+The `<parser>` can notify the user if any arguments were passed or not before the parsing starts:
+
+- [`<parser>.onArgs(..)`](./ADVANCED.md#parseronargs) triggered when one or 
+  more arguments were passed
+  ```javascript
+  .onArgs(function(args){
+	  console.log('### input arguments:', args) })
+  ```
+
+- [`<parser>.onNoArgs(..)`](./ADVANCED.md#parseronnoargs) triggered when no 
+  arguments were passed
+  ```javascript
+  .onNoArgs(function(args){
+	  console.log('### no arguments passed.') })
+  ```
+
 
 ### Handling the result
 
