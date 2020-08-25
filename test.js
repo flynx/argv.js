@@ -32,6 +32,8 @@ test.Setups({
 		return require('./examples/options').parser },
 	lang: function(){
 		return require('./examples/lang').parser },
+	chain: function(){
+		return require('./examples/chain').parser },
 
 	// NOTE: this will also load .bare, .options and .lang
 	basic: function(assert){
@@ -44,6 +46,8 @@ test.Setups({
 			'-verbose': function(){
 				console.log('>>> VERBOSE:', ...arguments)
 				return 'verbose' },
+
+			'-blank': {},
 
 			'-c': '@command',
 			'@cmd': '@command',
@@ -173,6 +177,7 @@ test.Setups({
 			'@bare': setups.bare(assert),
 			'@opts': setups.options(assert),
 			'@lang': setups.lang(assert),
+			'@chain': setups.chain(assert),
 
 
 			// collision test...

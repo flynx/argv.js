@@ -1155,7 +1155,14 @@ object.Constructor('Parser', {
 						|| parsed.handler(dfl)[1]
 					// no handler found and '-*' or '@*' not defined...
 					if(handler == null){
-						throw ParserError(`Unknown ${ type == 'opt' ? 'option' : 'command:' } $ARG`, arg) }
+						// XXX if nether the whole arg nor it split are found
+						// 		we need to push the original to unhandled...
+						console.log('!!!!!!!!!!!!!!!!!!!!!', arg)
+						unhandled.push(arg)
+						continue }
+						//throw module.ParserError(
+						//	`Unknown ${ type == 'opt' ? 'option' : 'command:' } $ARG`, 
+						//	arg) }
 
 					// mark/unmark handlers...
 					values.delete(handler)
