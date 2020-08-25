@@ -16,7 +16,9 @@
 * 	https://github.com/flynx/argv.js
 *
 * TODO:
-* 	.onNoArgs(..) / onArgs(..) callbacks...
+* 	- chaining processors
+* 		- handle only some args and pass the rest to the next parser...
+* 		- need a unified way to handle docs..
 *
 *
 **********************************************************************/
@@ -927,11 +929,16 @@ object.Constructor('Parser', {
 	//
 	// NOTE: args is mutable and thus can be modified here affecting 
 	// 		further parsing.
+	//
+	// XXX need a way to stop processing in the same way 'return THEN' / 'return STOP' do...
+	// 		...one way to do this currently is to empty the args...
 	onArgs: afterCallback('onArgs'),
 	onNoArgs: afterCallback('onNoArgs'),
 
 	// Post-parsing callbacks...
 	//
+	// 	XXX this should be able to accept a parser...
+	// 		...i.e. the callback must be signature-compatible with .__call__(..)
 	// 	.then(callback(unhandled, root_value, rest))
 	//
 	// 	.stop(callback(arg, rest))
@@ -940,6 +947,20 @@ object.Constructor('Parser', {
 	then: afterCallback('parsing'),
 	stop: afterCallback('stop'),
 	error: afterCallback('error'),
+
+	//
+	// XXX another way to do this is to make .then(..) signature-compatible 
+	// 		with the parser.__call__(..) and pass it a parser...
+	// 		...this would require -help to be able to document the 
+	// 		chained parser(s)...
+	// 		...also, being able to quit from the handler preventing further 
+	// 		handling (a-la returning STOP)
+	// XXX need:
+	// 		- a way for the next parser to bail or explicitly call next 
+	// 			chained -- can be done in .onArgs(..)...
+	// 			...do we need a .next(..) method???
+	// XXX EXPERIMENTAL, not yet used...
+	//chain: afterCallback('chain'),
 
 	// Remove callback...
 	off: function(evt, handler){
