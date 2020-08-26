@@ -52,8 +52,34 @@ argv.Parser({
 				'any other options']},
 	}))
 
+
+var parser2 =
+exports.parser2 =
+argv.Parser.chain({
+	'-a': {
+		doc: [
+			'high priority option',
+			'this will get processed before',
+			'any other options'],
+		handler: function(){
+			console.log('### high priority option') }},
+},{
+	'-b': {
+		doc: 'medium priority option',
+		handler: function(){
+			console.log('### normal priority option') }},
+},{
+	'-c': {
+		doc: 'normal priority option',
+		handler: function(){
+			console.log('### normal priority option') }},
+})
+
+
+
 // run the parser...
 __filename == (require.main || {}).filename
-	&& parser(process.argv)
+	&& parser2()
+
 
 // vim:set ts=4 sw=4 spell :

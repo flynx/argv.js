@@ -54,6 +54,7 @@ For basics see [README.md](./README.md)
 			- [`<parser>.error(..)`](#parsererror-1)
 			- [`<parser>.off(..)`](#parseroff)
 			- [`<parser>(..)`](#parser-1)
+		- [`Parser.chain(..)` (EXPERIMENTAL)](#parserchain-experimental)
 	- [Advanced parser API](#advanced-parser-api)
 		- [`<parser>.print(..)` / `<parser>.printError(..)`](#parserprint--parserprinterror)
 		- [`<parser>.handlerDefault(..)`](#parserhandlerdefault)
@@ -761,6 +762,31 @@ Explicitly pass both a list of arguments and script path.
 If `<main>` is present in `<argv>` all the arguments before it will 
 be ignored, otherwise the whole list is processed as if `<main>` was 
 its head.
+
+
+### `Parser.chain(..)` (EXPERIMENTAL)
+
+Chain several parsers for staggering option/command processing.
+```
+Parser.chain(<spec>, <spec>, ..)
+	-> <parser>
+```
+
+This creates a chain of parsers, each processing only the arguments it defines 
+and passes the rest to the next in chain. This is useful for defining arguments 
+that need to be processed out of order and before anything else.
+
+This is similar to chaining parsers via `.then(..)` but with additional setup:
+- all parsers except the last will have:
+  - `.splitOptions` set to `false`
+  - `"-help"` set to `undefined` enabling `-help` pass-through
+  - `"-*"` and `"@*"` set to `undefined` enabling arguments pass-through
+- the last parser will have all the options from the other parsers merged into 
+  it for complete docs/`-help`
+
+
+XXX the resulting `<parsed>` object will only contain data from the last parser,
+this may change in the future.
 
 
 

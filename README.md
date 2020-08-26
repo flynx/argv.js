@@ -37,7 +37,7 @@ This code is an evolution of that parser.
   - `-version` &ndash; print version
   - `-quiet` &ndash; suppress printing
   - `-` &ndash; stop argument processing
-- Extensible
+- Extensible and self-applicable
 
 
 ### Planned

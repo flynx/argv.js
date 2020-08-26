@@ -319,6 +319,44 @@ object.Constructor('Parser', {
 		toggle: function(v, cur){ return !cur },
 	},
 
+	// XXX this does not merge the parse results... (???)
+	// XXX EXPERIMENTAL...
+	chain: function(...parsers){
+		var Parser = this
+		var [post, ...pre] = parsers.reverse()
+		pre.reverse()
+
+		// prepare the final parser for merged doc...
+		// XXX object.deepKeys(..) ???
+		var final = Parser(Object.assign({}, 
+			// set attribute order...
+			// NOTE: this is here to set the attribute order according 
+			// 		to priority...
+			...pre, 
+			// set the correct values...
+			post, 
+			...pre))
+
+		return pre
+			// setup the chain for arg pass-through...
+			.map(function(e){
+				// XXX object.deepKeys(..) ???
+				return Parser(Object.assign({}, 
+					e, 
+					{
+						splitOptions: false,
+						'-help': undefined,
+						'-*': undefined,
+						'@*': undefined,
+					})) })
+			.concat([final])
+			// chain...
+			.reduce(function(res, cur){
+				return res ?
+					// NOTE: need to call .then(..) on each of the parsers, 
+					// 		so we return cur to be next...
+					(res.then(cur), cur)
+					: cur }, null) },
 }, {
 	// config...
 	//
@@ -1096,8 +1134,10 @@ object.Constructor('Parser', {
 			return res }
 		// NOTE: if successful this needs to modify the arg, thus it 
 		// 		returns both the new first arg and the handler...
-		// XXX if no handler is found this should return the original 
-		// 		input arg...
+		// NOTE: if the first letter is a fail the whole arg will get 
+		// 		reported...
+		// XXX do we need to report the specific fail or the whole 
+		// 		unsplit arg??? (see below)
 		var splitArgs = function(arg, rest){
 			var [arg, value] = arg.split(/=/)
 			// skip single letter unknown or '--' options...
@@ -1111,9 +1151,18 @@ object.Constructor('Parser', {
 			// push the value to the last arg...
 			value !== undefined
 				&& r.push(r.pop() +'='+ value) 
-			// push new options back to option "stack"...
-			rest.splice(0, 0, ...r)
-			return [ a, parsed.handler(a)[1] ] }
+			var h = parsed.handler(a)[1]
+			// XXX do we need to report the specific fail or the whole 
+			// 		unsplit arg???
+			// check the rest of the args...
+			//if(h && r.reduce(function(r, a){ 
+			//		return r && parsed.handler(a)[1] }, true)){
+			if(h){
+				// push new options back to option "stack"...
+				rest.splice(0, 0, ...r)
+				return [ a, h ] }
+			// no handler found -> return undefined
+			return [ arg, undefined ] }
 
 		try{
 			// parse/interpret the arguments and call handlers...
@@ -1139,6 +1188,7 @@ object.Constructor('Parser', {
 						: parsed.isCommand(arg) ?
 							['cmd', COMMAND_PREFIX +'*']
 						: ['unhandled']
+					// no handler is found...
 					if(type == 'unhandled'){
 						unhandled.push(arg)
 						continue }
@@ -1156,9 +1206,6 @@ object.Constructor('Parser', {
 						// dynamic or error...
 						|| parsed.handler(dfl)[1]
 					// no handler found and '-*' or '@*' not defined...
-					// XXX if nether the whole arg nor it split are found
-					// 		we need to push the original to unhandled...
-					// 		...or is setting .splitOptions to false enough???
 					if(handler == null){
 						unhandled.push(arg)
 						continue }
