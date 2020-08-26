@@ -1096,6 +1096,8 @@ object.Constructor('Parser', {
 			return res }
 		// NOTE: if successful this needs to modify the arg, thus it 
 		// 		returns both the new first arg and the handler...
+		// XXX if no handler is found this should return the original 
+		// 		input arg...
 		var splitArgs = function(arg, rest){
 			var [arg, value] = arg.split(/=/)
 			// skip single letter unknown or '--' options...
@@ -1154,15 +1156,12 @@ object.Constructor('Parser', {
 						// dynamic or error...
 						|| parsed.handler(dfl)[1]
 					// no handler found and '-*' or '@*' not defined...
+					// XXX if nether the whole arg nor it split are found
+					// 		we need to push the original to unhandled...
+					// 		...or is setting .splitOptions to false enough???
 					if(handler == null){
-						// XXX if nether the whole arg nor it split are found
-						// 		we need to push the original to unhandled...
-						console.log('!!!!!!!!!!!!!!!!!!!!!', arg)
 						unhandled.push(arg)
 						continue }
-						//throw module.ParserError(
-						//	`Unknown ${ type == 'opt' ? 'option' : 'command:' } $ARG`, 
-						//	arg) }
 
 					// mark/unmark handlers...
 					values.delete(handler)

@@ -18,26 +18,38 @@ var argv = require('../argv')
 // 					...this can be implemented as a special method/command
 // 					something like .next(..) or .handleRest(..)
 // 			- .chain(<parser>)
-//
+// XXX might be a good idea to flip this around and instead of 
+// 		chaining after do a pre-parse....
 var parser = 
 exports.parser =
 argv.Parser({
+
+		'-x': {
+			handler: function(){
+				console.log('### high priority option') }},
+
+		// setup...
 		// XXX can we go without this???
 		splitOptions: false,
-
+		// pass help through to the chained parser...
 		'-help': undefined,
-
+		// let all the unknown options pass through...
 		'-*': undefined,
 	})
 	// XXX this works but we still need:
 	// 		- threading back the results
-	// 		- -help
 	// XXX would also be interesting to be able to route to specific 
 	// 		chained parsers...
 	.then(argv.Parser({
-		'-moo': { 
-			handler: function(){
-				console.log('MOO!!!') }},
+		// used for documentation...
+		//
+		// this is handled in the root parser and will never get reached 
+		// here...
+		'-x': {
+			doc: [
+				'high priority option',
+				'this will get processed before',
+				'any other options']},
 	}))
 
 // run the parser...
