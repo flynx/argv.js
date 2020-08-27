@@ -54,7 +54,7 @@ For basics see [README.md](./README.md)
 			- [`<parser>.error(..)`](#parsererror-1)
 			- [`<parser>.off(..)`](#parseroff)
 			- [`<parser>(..)`](#parser-1)
-		- [`Parser.chain(..)` (EXPERIMENTAL)](#parserchain-experimental)
+		- [`Parser.chain(..)` _(EXPERIMENTAL)_](#parserchain-experimental)
 	- [Advanced parser API](#advanced-parser-api)
 		- [`<parser>.print(..)` / `<parser>.printError(..)`](#parserprint--parserprinterror)
 		- [`<parser>.handlerDefault(..)`](#parserhandlerdefault)
@@ -764,7 +764,7 @@ be ignored, otherwise the whole list is processed as if `<main>` was
 its head.
 
 
-### `Parser.chain(..)` (EXPERIMENTAL)
+### `Parser.chain(..)` _(EXPERIMENTAL)_
 
 Chain several parsers for staggering option/command processing.
 ```
@@ -779,15 +779,19 @@ that need to be processed out of order and before anything else.
 This is similar to chaining parsers via `.then(..)` but with additional setup:
 - all parsers except the last will have:
   - `.splitOptions` set to `false`
+  - `"-"` set to `undefined`
   - `"-help"` set to `undefined` enabling `-help` pass-through
   - `"-*"` and `"@*"` set to `undefined` enabling arguments pass-through
-- the last parser will have all the options from the other parsers merged into 
-  it for complete docs/`-help`
+- the last parser will have:
+  - all the options from the other parsers merged into it for complete 
+    docs/`-help`
+  - `.splitOptions` set to `false`
 
 
-XXX the resulting `<parsed>` object will only contain data from the last parser,
-this may change in the future.
+_XXX the resulting `<parsed>` object will only contain data from the last parser,
+this may change in the future..._
 
+_XXX not sure about the `.splitOptions` restriction on the last parser yet, but it definitely should not include the options from preceding parsers..._
 
 
 ## Advanced parser API

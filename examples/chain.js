@@ -67,7 +67,7 @@ argv.Parser.chain({
 	'-b': {
 		doc: 'medium priority option',
 		handler: function(){
-			console.log('### normal priority option') }},
+			console.log('### medium priority option') }},
 },{
 	'-c': {
 		doc: 'normal priority option',

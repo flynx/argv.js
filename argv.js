@@ -320,15 +320,32 @@ object.Constructor('Parser', {
 	},
 
 	// XXX this does not merge the parse results... (???)
+	// XXX splitting the high priority args should not work...
+	// XXX object.deepKeys(..) ???
 	// XXX EXPERIMENTAL...
 	chain: function(...parsers){
 		var Parser = this
 		var [post, ...pre] = parsers.reverse()
 		pre.reverse()
 
+		// only update values that were not explicitly set...
+		var update = function(e, o){
+			return Object.assign(
+				e, 
+				Object.fromEntries(
+					Object.entries(o)
+						.map(function([k, v]){
+							return [k, 
+								e.hasOwnProperty(k) ?
+									e[k]
+									: v ] }) )) }
+
 		// prepare the final parser for merged doc...
-		// XXX object.deepKeys(..) ???
-		var final = Parser(Object.assign({}, 
+		// NOTE: pre values have priority over post values...
+		var final = Parser(Object.assign({
+				// XXX can we remove this restriction???
+				splitOptions: false,
+			}, 
 			// set attribute order...
 			// NOTE: this is here to set the attribute order according 
 			// 		to priority...
@@ -337,26 +354,29 @@ object.Constructor('Parser', {
 			post, 
 			...pre))
 
-		return pre
+		// build the chain...
+		pre = pre
 			// setup the chain for arg pass-through...
 			.map(function(e){
-				// XXX object.deepKeys(..) ???
 				return Parser(Object.assign({}, 
-					e, 
-					{
+					update(e, {
 						splitOptions: false,
 						'-help': undefined,
 						'-*': undefined,
 						'@*': undefined,
-					})) })
-			.concat([final])
-			// chain...
+						'-': undefined,
+					}))) }) 
+		// chain...
+		pre
 			.reduce(function(res, cur){
 				return res ?
 					// NOTE: need to call .then(..) on each of the parsers, 
 					// 		so we return cur to be next...
 					(res.then(cur), cur)
-					: cur }, null) },
+					: cur }, null)
+   			.then(final) 
+
+		return pre[0] },
 }, {
 	// config...
 	//
