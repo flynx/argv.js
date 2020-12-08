@@ -320,6 +320,7 @@ object.Constructor('Parser', {
 	},
 
 	// XXX this does not merge the parse results... (???)
+	// 		...not sure how to do this yet...
 	// XXX splitting the high priority args should not work...
 	// XXX object.deepKeys(..) ???
 	// XXX EXPERIMENTAL...
@@ -377,6 +378,7 @@ object.Constructor('Parser', {
    			.then(final) 
 
 		return pre[0] },
+
 }, {
 	// config...
 	//
@@ -634,7 +636,7 @@ object.Constructor('Parser', {
 				|| dfl }
 		return text
 			.replace(/\$AUTHOR/g, get('author', 'Author'))
-			.replace(/\$LICENSE/g, get('license', ''))
+			.replace(/\$LICENSE/g, get('license', '-'))
 			.replace(/\$VERSION/g, get('version', '0.0.0'))
 			.replace(/\$SCRIPTNAME/g, this.scriptName) },
 
@@ -1055,13 +1057,14 @@ object.Constructor('Parser', {
 		// prep argv...
 		var rest = parsed.rest = 
 			argv == null ?
-				(typeof(process) != 'unhandled' ?
+				(typeof(process) != 'undefined' ?
 					process.argv 
 					: [])
 				: argv
 		parsed.argv = rest.slice() 
 		main = main 
-			|| require.main.filename
+			|| (require.main || {}).filename
+			|| parsed.argv[1]
 		// nested command handler...
 		var nested = parsed.nested = false
 		if(context instanceof Parser){

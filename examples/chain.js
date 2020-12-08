@@ -73,6 +73,8 @@ argv.Parser.chain({
 		doc: 'normal priority option',
 		handler: function(){
 			console.log('### normal priority option') }},
+
+	'@manual': parser,
 })
 
 
