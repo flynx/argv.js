@@ -629,7 +629,7 @@ object.Constructor('Parser', {
 				Object.values(o).join(' ')
 				: o }),
 	license: getFromPackage('license'),
-	usage: '$SCRIPTNAME [OPTIONS]',
+	usage: '$SCRIPTNAME $REQUIRED [OPTIONS]',
 	doc: undefined,
 	examples: undefined,
 	//footer: undefined,
@@ -648,6 +648,14 @@ object.Constructor('Parser', {
 			: [a] },
 	// NOTE: if var value is not defined here we'll try and get it from 
 	// 		parent...
+	// NOTE: this tries to be smart with spaces around $REQUIRED so 
+	// 		as to keep it natural in the format string while removing 
+	// 		the extra space when no value is present...
+	// 			'script $REQUIRED args'
+	// 		can produce:
+	// 			'script args'
+	// 			'script x=VALUE args'
+	// 		depending on required options...
 	expandTextVars: function(text){
 		var that = this
 		var get = function(o, attr, dfl){
@@ -657,11 +665,29 @@ object.Constructor('Parser', {
 				|| (o.parent ? 
 					get(o.parent, attr, dfl)
 	   				: dfl )}
+		// NOTE: this can get a bit expensive so we check if we need the 
+		// 		value before generating it...
+		text = /\$REQUIRED/g.test(text) ?
+			// add required args and values...
+			text
+				.replace(/ ?\$REQUIRED ?/g, 
+					that.requiredArguments()
+						.map(function([[key], arg]){
+							key = key.startsWith(COMMAND_PREFIX) ?
+								key.slice(COMMAND_PREFIX.length)
+								: key
+							return ' '
+								+(arg ?
+									key+'='+arg
+									: key) })
+						.join('')
+					+' ')
+			: text
 		return text
 			.replace(/\$AUTHOR/g, get(that, 'author', 'Author'))
 			.replace(/\$LICENSE/g, get(that, 'license', '-'))
 			.replace(/\$VERSION/g, get(that, 'version', '0.0.0'))
-			.replace(/\$SCRIPTNAME/g, this.scriptName) },
+			.replace(/\$SCRIPTNAME/g, this.scriptName || 'SCRIPT') },
 
 	// NOTE: this will set .quiet to false...
 	'-h': '-help',

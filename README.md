@@ -51,25 +51,25 @@ This code is an evolution of that parser.
 
 ## Contents
 - [argv.js](#argvjs)
-	- [Motivation](#motivation)
-	- [Features](#features)
-		- [Planned](#planned)
-	- [Contents](#contents)
-	- [Architecture](#architecture)
-	- [Basics and quick start](#basics-and-quick-start)
-	- [Options in more detail](#options-in-more-detail)
-		- [Help and metadata](#help-and-metadata)
-		- [Basic options](#basic-options)
-		- [Commands](#commands)
-		- [Active options/commands](#active-optionscommands)
-		- [Nested parsers](#nested-parsers)
-		- [Stopping](#stopping)
-		- [Error reporting](#error-reporting)
-		- [Before parsing begins](#before-parsing-begins)
-		- [Handling the result](#handling-the-result)
-		- [Calling the script](#calling-the-script)
-	- [Advanced docs](#advanced-docs)
-	- [License](#license)
+  - [Motivation](#motivation)
+  - [Features](#features)
+    - [Planned](#planned)
+  - [Contents](#contents)
+  - [Architecture](#architecture)
+  - [Basics and quick start](#basics-and-quick-start)
+  - [Options in more detail](#options-in-more-detail)
+    - [Help and metadata](#help-and-metadata)
+    - [Basic options](#basic-options)
+    - [Commands](#commands)
+    - [Active options/commands](#active-optionscommands)
+    - [Nested parsers](#nested-parsers)
+    - [Stopping](#stopping)
+    - [Error reporting](#error-reporting)
+    - [Before parsing begins](#before-parsing-begins)
+    - [Handling the result](#handling-the-result)
+    - [Calling the script](#calling-the-script)
+  - [Advanced docs](#advanced-docs)
+  - [License](#license)
 
 
 ## Architecture
@@ -528,7 +528,7 @@ The `<parser>` will call different sets of callbacks on different stop condition
 This will create a parser that supports the following:
 ```shell_session
 $ ./options.js --help 
-Usage: options.js [OPTIONS]
+Usage: options.js -r [OPTIONS]
 
 Example script options
 
