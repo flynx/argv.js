@@ -292,7 +292,12 @@ object.Constructor('Parser', {
 	// 		definition.
 	typeHandlers: {
 		string: function(v){ return v.toString() },
-		bool: function(v){ return !!v },
+		bool: function(v){ 
+			return v == 'true' ? 
+					true
+				: v == 'false' ?
+					false
+				: !!v },
 		int: parseInt,
 		float: parseFloat,	
 		number: function(v){ return new Number(v) },
@@ -641,24 +646,28 @@ object.Constructor('Parser', {
 				[a +'\t'.repeat(opts_width - Math.floor((a.strip || a).length/8))+ prefix + b]
 				: [a, '\t'.repeat(opts_width)+ prefix + b])
 			: [a] },
+	// NOTE: if var value is not defined here we'll try and get it from 
+	// 		parent...
 	expandTextVars: function(text){
 		var that = this
-		var get = function(attr, dfl){
-			return (typeof(that[attr]) == 'function' ?
-					that[attr]()
-					: that[attr])
-				|| dfl }
+		var get = function(o, attr, dfl){
+			return (typeof(o[attr]) == 'function' ?
+					o[attr]()
+					: o[attr])
+				|| (o.parent ? 
+					get(o.parent, attr, dfl)
+	   				: dfl )}
 		return text
-			.replace(/\$AUTHOR/g, get('author', 'Author'))
-			.replace(/\$LICENSE/g, get('license', '-'))
-			.replace(/\$VERSION/g, get('version', '0.0.0'))
+			.replace(/\$AUTHOR/g, get(that, 'author', 'Author'))
+			.replace(/\$LICENSE/g, get(that, 'license', '-'))
+			.replace(/\$VERSION/g, get(that, 'version', '0.0.0'))
 			.replace(/\$SCRIPTNAME/g, this.scriptName) },
 
 	// NOTE: this will set .quiet to false...
 	'-h': '-help',
 	'-help': {
 		doc: 'print this message and exit',
-		priority: 99,
+		priority: 90,
 		handler: function(argv, key, value){
 			var that = this
 			var sep = this.helpArgumentSeparator || ', '
@@ -825,7 +834,7 @@ object.Constructor('Parser', {
 	'-v': '-version',
 	'-version': {
 		doc: 'show $SCRIPTNAME version and exit',
-		priority: 99,
+		priority: 80,
 		handler: function(){
 			this.quiet = false
 			this.print((typeof(this.version) == 'function' ?
@@ -841,7 +850,7 @@ object.Constructor('Parser', {
 
 	'-q': '-quiet',
 	'-quiet': {
-		priority: 99,
+		priority: 70,
 		doc: 'quiet mode', 
 		default: true, },
 
