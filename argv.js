@@ -465,17 +465,31 @@ object.Constructor('Parser', {
 						1
 					: ai - bi })
 			.map(function([e, _]){ return e }) },
-	optionsWithValue: function(){
-		return this.options()
+	optionsWithValue: function(selector='optoins'){
+		return this[selector]()
 			.filter(function([k, a, d, handler]){
 				return !!handler.env 
 					|| 'default' in handler }) },
-	requiredOptions: function(){
-		return this.options()
+	requiredOptions: function(selector='optoins'){
+		return this[selector]()
 			.filter(function([k, a, d, handler]){
 				return handler.required }) },
+
 	commands: function(){
 		return this.options(COMMAND_PREFIX) },
+	commandsWithValue: function(){
+		return this.optionsWithValue('commands') },
+	requiredCommands: function(){
+		return this.requiredOptions('commands') },
+
+	// XXX might be a good idea to make this the base and derive the rest from here...
+	// XXX a better name???
+	allArguments: function(){
+		return this.options(OPTION_PREFIX, COMMAND_PREFIX) },
+	argumentsWithValue: function(){
+		return this.optionsWithValue('allArguments') },
+	requiredArguments: function(){
+		return this.requiredOptions('allArguments') },
 
 	// Get handler...
 	//
@@ -713,6 +727,8 @@ object.Constructor('Parser', {
 					...getValue('doc'),
 					// options...
 					// XXX add option groups...
+					// 		....or: 'Group title': 'section', items that
+					// 		print as section titles...
 					...section('Options',
 						this.options()
 							.filter(function([o, a, doc]){
@@ -808,7 +824,7 @@ object.Constructor('Parser', {
 
 	'-v': '-version',
 	'-version': {
-		doc: 'show $SCRIPTNAME verion and exit',
+		doc: 'show $SCRIPTNAME version and exit',
 		priority: 99,
 		handler: function(){
 			this.quiet = false
@@ -1190,7 +1206,7 @@ object.Constructor('Parser', {
 		try{
 			// parse/interpret the arguments and call handlers...
 			var values = new Map(
-				parsed.optionsWithValue()
+				parsed.argumentsWithValue()
 					.map(function([k, a, d, handler]){ 
 						return [handler, k[0]] }))
 			var seen = new Set()
@@ -1260,7 +1276,7 @@ object.Constructor('Parser', {
 
 			// check and report required options...
 			var missing = parsed
-				.requiredOptions()
+				.requiredArguments()
 					.filter(function([k, a, d, h]){
 						return !seen.has(h) })
 					.map(function([k, a, d, h]){
