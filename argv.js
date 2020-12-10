@@ -1082,9 +1082,9 @@ object.Constructor('Parser', {
 			|| (require.main || {}).filename
 			|| parsed.argv[1]
 		// nested command handler...
-		var nested = parsed.nested = false
+		var nested = parsed.parent = false
 		if(context instanceof Parser){
-			nested = parsed.nested = true
+			nested = parsed.parent = context
 			main = context.scriptName +' '+ main 
 			rest.unshift(main) }
 		// normalize the argv...
