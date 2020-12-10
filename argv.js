@@ -692,10 +692,10 @@ object.Constructor('Parser', {
 						['required value']
 						: []),
 					...(dfl ?
-						[`default: ${dfl}`]
+						[`default: ${ JSON.stringify(dfl) }`]
 						: []),
 					...(env ?
-						[`env: \$${env}`]
+						[`env: \$${ env }`]
 						: []),
 					...(handler instanceof Parser ?
 						//[`more: ${ that.scriptName } ${ arg.slice(1) } -h`]
