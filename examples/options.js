@@ -120,6 +120,12 @@ argv.Parser({
 		// ...
 	},
 
+	'-prefix-*': {
+        doc: 'Pattern option',
+        handler: function(rest, key){
+       		// ... 
+		},
+    },
 
 	'@nested': argv.Parser({
 			// ...

@@ -429,10 +429,11 @@ object.Constructor('Parser', {
 		prefix = prefix.length == 0 ?
 			[OPTION_PREFIX]
 			: prefix
+		var attrs = object.deepKeys(that, Parser.prototype)
 		return prefix
 			.map(function(prefix){
 				var handlers = {}
-				object.deepKeys(that, Parser.prototype)
+				attrs
 					.forEach(function(opt){
 						if(!opt.startsWith(prefix)){
 							return }
@@ -496,6 +497,28 @@ object.Constructor('Parser', {
 	requiredArguments: function(){
 		return this.requiredOptions('allArguments') },
 
+	//
+	//	.patternArguments()
+	//		-> list
+	//
+	//	Get list of pattern args that key matches...
+	//	.patternArguments(key)
+	//		-> list
+	//
+	// NOTE: list is sorted by option length...
+	// NOTE: pattern->pattern aliases are not currently supported...
+	// NOTE: output is of the same format as .options(..)
+	// NOTE: when changing this revise a corresponding section in .handler(..)
+	patternArguments: function(key){
+		return this.allArguments()
+			.filter(function([[opt]]){
+				return opt.includes('*') 
+					&& (key == null 
+						|| (new RegExp(`^${ opt.split('*').join('.*') }$`)).test(key)) })
+			// sort longest first...
+		   	.sort(function(a, b){
+				return b[0][0].length - a[0][0].length }) },
+
 	// Get handler...
 	//
 	// 	.handler(key)
@@ -523,6 +546,19 @@ object.Constructor('Parser', {
 					// report loop...
 					'loop', [...seen, key]] }
 			seen.add(key) }
+		// check pattern options...
+		// NOTE: we are not using .patternArguments(..) because .options(..) 
+		// 		used there uses .handler(..) and this breaks things...
+		if(!(key in this) && key != '-*'){
+			key = object.deepKeys(this, Parser.prototype)
+					.filter(function(opt){
+						return opt.includes('*') 
+							&& (key == null 
+								|| (new RegExp(`^${ opt.split('*').join('.*') }$`))
+									.test(key)) })
+					.sort(function(a, b){
+						return b[0][0].length - a[0][0].length })[0] 
+				|| key }
 		return [key, this[key],
 			// report dead-end if this[key] is undefined...
 			...(this[key] ? 

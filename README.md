@@ -62,6 +62,7 @@ This code is an evolution of that parser.
     - [Basic options](#basic-options)
     - [Commands](#commands)
     - [Active options/commands](#active-optionscommands)
+    - [Pattern options](#pattern-options)
     - [Nested parsers](#nested-parsers)
     - [Stopping](#stopping)
     - [Error reporting](#error-reporting)
@@ -335,6 +336,7 @@ For more info on available `.type` and `.collect` handlers see:
 respectively.
 
 
+
 ### Commands
 
 The only difference between an _option_ and a _command_ is the prefix (`"-"` vs. `"@"`) 
@@ -381,6 +383,26 @@ Option's `.handler(..)` only sees the `args` that follow it in the command line,
 thus anything it may expect/get from the arguments must follow it (in the manner 
 it expects), `argv.js` poses no restrictions on full or partial manual handling
 of arguments by options/commands.
+
+
+
+### Pattern options
+
+Pattern option/command keys enable partial input key matching.
+```javascript
+    '-prefix-*': {
+        doc: 'Pattern option',
+        handler: function(rest, key){
+            // ...
+        } },
+```
+
+The above code will match any _unhandled_ input option starting with 
+`-prefix-`/`--prefix-` and push the explicitly `false` value back to the option 
+queue.
+
+A pattern option/command is any option with a key containing `"*"`.
+
 
 
 ### Nested parsers
@@ -551,6 +573,7 @@ Options:
         -c                      - command
              --active           - basic active option
         -s,  --shorthand-active - shorthand-active
+             --prefix-*         - Pattern option
              --then             - then
              --stop             - stop
              --error            - error

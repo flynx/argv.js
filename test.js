@@ -28,14 +28,14 @@ var setups =
 test.Setups({
 	bare: function(){
 		return require('./examples/bare').parser },
-	options: function(){
+	opts: function(){
 		return require('./examples/options').parser },
 	lang: function(){
 		return require('./examples/lang').parser },
 	chain: function(){
 		return require('./examples/chain').parser },
 
-	// NOTE: this will also load .bare, .options and .lang
+	// NOTE: this will also load .bare, .opts and .lang
 	basic: function(assert){
 		return argv.Parser({
 			// disable exit on error...
@@ -175,13 +175,15 @@ test.Setups({
 
 
 			'@bare': setups.bare(assert),
-			'@opts': setups.options(assert),
+			'@opts': setups.opts(assert),
 			'@lang': setups.lang(assert),
 			'@chain': setups.chain(assert),
 
 
 			// collision test...
 			// NOTE: values of these will shadow the API...
+			// XXX need to either warn the user of this or think of a 
+			// 		way to avoid this...
 			'@options': {},
 			'-handler': {},
 		})
