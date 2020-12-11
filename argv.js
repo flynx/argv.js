@@ -163,6 +163,21 @@ function(attr, func){
 
 
 //---------------------------------------------------------------------
+// Presets...
+
+/*/ XXX
+var presets =
+module.presets = {
+	bool: {
+		type: 'bool',
+		value: true, 
+		default: true, },
+}
+//*/
+
+
+
+//---------------------------------------------------------------------
 // Basic argv parser...
 //
 //
@@ -497,6 +512,7 @@ object.Constructor('Parser', {
 	requiredArguments: function(){
 		return this.requiredOptions('allArguments') },
 
+	// Get pattern arguments...
 	//
 	//	.patternArguments()
 	//		-> list
