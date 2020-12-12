@@ -413,7 +413,10 @@ object.Constructor('Parser', {
 
 	requiredOptionPriority: 80,
 
-	packageJson: undefined,
+	packageJson: undefined, 
+
+	hideExt: /\.exe$/,
+
 
 
 	// instance stuff...
@@ -1150,13 +1153,11 @@ object.Constructor('Parser', {
 	// 		all the parse data...
 	// NOTE: this (i.e. parser) can be used as a nested command/option 
 	// 		handler...
-	//
-	// XXX need to get the name of the command define in package.json's 
-	// 		run key...
 	__call__: function(context, argv, main, root_value){
 		var that = this
 		var parsed = Object.create(this)
 		var opt_pattern = parsed.optionInputPattern
+
 		// prep argv...
 		var rest = parsed.rest = 
 			argv == null ?
@@ -1167,17 +1168,29 @@ object.Constructor('Parser', {
 		parsed.argv = rest.slice() 
 		main = main 
 			|| (require.main || {}).filename
-		//	|| parsed.argv[1]
-		// nested command handler...
+			|| this.script
+		// nested handler...
 		var nested = parsed.parent = false
 		if(context instanceof Parser){
 			nested = parsed.parent = context
 			main = context.scriptName +' '+ main 
-			rest.unshift(main) }
+			rest.unshift(main)
+		// electron packaged app root -- no script included...
+		} else if(main 
+				&& rest[1] != main
+				// both paths can be relative...
+				&& path.resolve(process.cwd(), rest[1]) 
+					!= path.resolve(process.cwd(), main)){
+			main = (this.hideExt && this.hideExt.test(rest[0])) ? 
+				// remove ext...
+				rest[0].replace(this.hideExt, '')
+				: rest[0]
+			rest.splice(1, 0, rest[0]) }
 		// normalize the argv...
 		if(main != null && rest[0] == process.execPath){
 			rest.splice(0, 2)
 			rest.unshift(main) }
+
 		// script stuff...
 		var script = parsed.script = rest.shift()
 		var basename = script.split(/[\\\/]/).pop() 
