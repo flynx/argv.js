@@ -1167,7 +1167,7 @@ object.Constructor('Parser', {
 		parsed.argv = rest.slice() 
 		main = main 
 			|| (require.main || {}).filename
-			|| parsed.argv[1]
+		//	|| parsed.argv[1]
 		// nested command handler...
 		var nested = parsed.parent = false
 		if(context instanceof Parser){
