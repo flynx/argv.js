@@ -32,6 +32,17 @@ var object = require('ig-object')
 
 
 //---------------------------------------------------------------------
+
+var ELECTRON_PACKAGED = 
+		(process.mainModule || {filename: ''})
+			.filename.includes('app.asar')
+		|| process.argv
+			.filter(function(e){ 
+				return e.includes('app.asar') })
+			.length > 0
+
+
+//---------------------------------------------------------------------
 // setup...
 
 var OPTION_PREFIX = '-'
@@ -416,7 +427,6 @@ object.Constructor('Parser', {
 	packageJson: undefined, 
 
 	hideExt: /\.exe$/,
-
 
 
 	// instance stuff...
@@ -1156,6 +1166,7 @@ object.Constructor('Parser', {
 	__call__: function(context, argv, main, root_value){
 		var that = this
 		var parsed = Object.create(this)
+		var nested = parsed.parent = false
 		var opt_pattern = parsed.optionInputPattern
 
 		// prep argv...
@@ -1166,30 +1177,26 @@ object.Constructor('Parser', {
 					: [])
 				: argv
 		parsed.argv = rest.slice() 
-		main = main 
-			|| (require.main || {}).filename
-			|| this.script
+
 		// nested handler...
-		var nested = parsed.parent = false
 		if(context instanceof Parser){
 			nested = parsed.parent = context
 			main = context.scriptName +' '+ main 
 			rest.unshift(main)
+
 		// electron packaged app root -- no script included...
-		} else if(main 
-				&& rest[1] != main
-				// both paths can be relative...
-				&& path.resolve(process.cwd(), rest[1]) 
-					!= path.resolve(process.cwd(), main)){
-			main = (this.hideExt && this.hideExt.test(rest[0])) ? 
+		} else if(ELECTRON_PACKAGED){
+			main = main || rest[0]
+			main = (parsed.hideExt && parsed.hideExt.test(rest[0])) ? 
 				// remove ext...
-				rest[0].replace(this.hideExt, '')
-				: rest[0]
-			rest.splice(1, 0, rest[0]) }
-		// normalize the argv...
-		if(main != null && rest[0] == process.execPath){
-			rest.splice(0, 2)
-			rest.unshift(main) }
+				main.replace(parsed.hideExt, '')
+				: main 
+			rest.splice(0, 1, main) 
+
+		// node...
+		} else {
+			main = main || rest[1] 
+			rest.splice(0, 2, main) }
 
 		// script stuff...
 		var script = parsed.script = rest.shift()
