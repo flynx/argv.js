@@ -323,7 +323,8 @@ object.Constructor('Parser', {
 					true
 				: v == 'false' ?
 					false
-				: !!v },
+				//: !!v },
+				: true },
 		int: parseInt,
 		float: parseFloat,	
 		number: function(v){ return new Number(v) },
@@ -943,7 +944,11 @@ object.Constructor('Parser', {
 	'-quiet': {
 		priority: 70,
 		doc: 'quiet mode', 
-		default: true, },
+		// XXX test if this prevents us to set the option...
+		// 		...the handler can't destingwish whether it was called 
+		// 		with the default or the user-passed value...
+		//default: true,
+		type: 'bool', },
 
 
 	// Stop argument processing...
