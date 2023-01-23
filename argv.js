@@ -910,6 +910,16 @@ object.Constructor('Parser', {
 				.flat()
 				.join('\n')))
 			return module.STOP }},
+	// XXX might also be a good idea to do this as --help and the do the 
+	// 		short version as -h...
+	'-help-all': {
+		// XXX REMOVE WHEN DONE...
+		doc: false,
+		handler: function(){
+			var res = this.handle('-help', ...arguments) 
+			// XXX print help for nested parsers...
+			// XXX
+			return res } },
 	// alias for convenience (not documented)...
 	'-?': {
 		doc: false,
