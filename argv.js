@@ -712,6 +712,18 @@ object.Constructor('Parser', {
 				[a +'\t'.repeat(opts_width - Math.floor((a.strip || a).length/8))+ prefix + b]
 				: [a, '\t'.repeat(opts_width)+ prefix + b])
 			: [a] },
+	getFieldValue: function(src, name){
+		name = arguments.length == 1 ?
+			src
+			: name
+		src = arguments.length == 1 ? 
+			this 
+			: src
+		return src[name] ?
+			['', typeof(src[name]) == 'function' ?
+				src[name].call(this)
+				: src[name]]
+			: [] },
 	// NOTE: if var value is not defined here we'll try and get it from 
 	// 		parent...
 	// NOTE: this tries to be smart with spaces around $REQUIRED so 
@@ -755,21 +767,34 @@ object.Constructor('Parser', {
 			.replace(/\$VERSION/g, get(that, 'version', '0.0.0'))
 			.replace(/\$SCRIPTNAME/g, this.scriptName || 'SCRIPT') },
 
+	//
+	// 	--help
+	// 	--help=<options>
+	//
+	// Supported options:
+	// 		noUsage			- do not print usage info
+	// 		noFooter		- do not print help footer
+	//
+	// NOTE: the options are for internal use mostly...
 	// NOTE: this will set .quiet to false...
 	'-h': '-help',
 	'-help': {
 		doc: 'print this message and exit',
 		priority: 90,
 		handler: function(argv, key, value){
+			var options = {}
+			if(value){
+				for(var opt of value.split(/\s*,\s*/g)){
+					options[opt] = true } }
 			var that = this
 			var sep = this.helpArgumentSeparator || ', '
 			var short = this.helpShortOptionSize || 1
 			var expandVars = this.expandTextVars.bind(this)
 			var formDoc = function(doc, handler, arg){
-				var dfl = getValue(handler, 'default')[1]
-				var req = getValue(handler, 'required')[1]
-				var val_req = getValue(handler, 'valueRequired')[1]
-				var env = getValue(handler, 'env')[1]
+				var dfl = that.getFieldValue(handler, 'default')[1]
+				var req = that.getFieldValue(handler, 'required')[1]
+				var val_req = that.getFieldValue(handler, 'valueRequired')[1]
+				var env = that.getFieldValue(handler, 'env')[1]
 
 				doc = (doc instanceof Array ?
 						doc
@@ -800,18 +825,6 @@ object.Constructor('Parser', {
 					...(info.length > 0 ?
 						['('+ info +')']
 						: [])] }
-			var getValue = function(src, name){
-				name = arguments.length == 1 ?
-					src
-					: name
-				src = arguments.length == 1 ? 
-					that 
-					: src
-				return src[name] ?
-					['', typeof(src[name]) == 'function' ?
-						src[name].call(that)
-						: src[name]]
-		   			: [] }
 			var section = function(title, items){
 				items = items instanceof Array ? items : [items]
 				return items.length > 0 ?
@@ -823,9 +836,11 @@ object.Constructor('Parser', {
 
 			this.print(
 				expandVars([
-					`Usage: ${ getValue('usage').join('') }`,
+					...(options.noUsage ?
+						[]
+						: [`Usage: ${ that.getFieldValue('usage').join('') }`]),
 					// doc (optional)...
-					...getValue('doc'),
+					...that.getFieldValue('doc'),
 					// options...
 					// XXX add option groups...
 					// 		....or: 'Group title': 'section', items that
@@ -868,7 +883,7 @@ object.Constructor('Parser', {
 					// dynamic options...
 					...section('Dynamic options',
 						(this['-*'] && this['-*'].section_doc) ? 
-							getValue(this['-*'], 'section_doc') || [] 
+							that.getFieldValue(this['-*'], 'section_doc') || [] 
 							: []),
 					// commands (optional)...
 					...section('Commands',
@@ -888,7 +903,7 @@ object.Constructor('Parser', {
 					// dynamic commands...
 					...section('Dynamic commands',
 						(this['@*'] && this['@*'].section_doc) ? 
-							getValue(this['@*'], 'section_doc') || [] 
+							that.getFieldValue(this['@*'], 'section_doc') || [] 
 							: []),
 					// examples (optional)...
 					...section('Examples',
@@ -896,16 +911,19 @@ object.Constructor('Parser', {
 							this.examples
 								.map(function(e){ 
 									return e instanceof Array ? e : [e] })
-						: getValue('examples') ),
+						: that.getFieldValue('examples') ),
 					// footer (optional)...
-					...getValue('footer') ]
+					...(options.noFooter ? 
+						[] 
+						: that.getFieldValue('footer')) ]
 				// expand/align columns...
 				.map(function(e){
 					return e instanceof Array ?
 						// NOTE: we need to expandVars(..) here so as to 
 						// 		be able to calculate actual widths...
 						that.alignColumns(...e.map(expandVars))
-							.map(function(s){ return '\t'+ s })
+							.map(function(s){ 
+								return '\t'+ s })
 						: e })
 				.flat()
 				.join('\n')))
@@ -913,24 +931,36 @@ object.Constructor('Parser', {
 	// XXX might also be a good idea to do this as --help and the do the 
 	// 		short version as -h...
 	'-help-all': {
-		// XXX REMOVE WHEN DONE...
+		// XXX should this be hidden???
+		//doc: 'print help for all nested commands supporting customization',
 		doc: false,
-		handler: function(){
-			// XXX print header but skip footer...
-			// XXX do we pass args here???
-			var res = this.handle('-help', ...arguments) 
+		handler: function(argv, key, value){
+			var options = {}
+			if(value){
+				for(var opt of value.split(/\s*,\s*/g)){
+					options[opt] = true } }
+
+			// main help...
+			var res = this.handle('-help', argv, '-help', 'noFooter')
+
 			// print help for nested parsers...
 			for(var n in this){
 				if(this[n] instanceof Parser){
-					// XXX print different header and skip footer...
 					this.print([
 						'',
 						'',
 						'Command: '+ n.slice(1),
 						'',
 					].join('\n'))
-					// XXX skip footer...
-					this.handle(n, ['-help'], n.slice(1)) } }
+					this.handle(n, ['-help=noFooter'], n.slice(1)) } }
+
+			// footer...
+			options.noFooter
+				|| this.footer
+					&& this.print(
+						this.expandTextVars(
+							this.getFieldValue('footer')
+								.join('\n')))
 			return res } },
 	// alias for convenience (not documented)...
 	'-?': {
