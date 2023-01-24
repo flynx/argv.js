@@ -137,11 +137,11 @@ var parser =
 exports.parser = 
 	argv.Parser({
 			// option definitions...
-			// ...
+			...
 		})
 		.then(function(){
 			// things to do after the options are handled...
-			// ...
+			...
 		})
 
 // run the parser...
@@ -216,6 +216,33 @@ for example:
 	footer: 'Written by: $AUTHOR\nVersion: $VERSION / License: $LICENSE',
 ```
 
+
+If nested parsers are defined the default `-h` and `--help` will behave differently,
+the former will print the normal help while `--help` will also print help for each
+of the nested parsers/commands.
+
+To disable this behavior set `'extendedHelp'` to `false`:
+```javascript
+	argv.Parser({
+			...
+
+			extendedHelp: false,
+
+			...
+		})
+```
+
+To explicitly separate `-h` and `--help` either define custom handlers or
+alias `--help` directly to `extendedHelp`:
+```javascript
+	argv.Parser({
+			...
+
+			'-help': 'extendedHelp',
+
+			...
+		})
+```
 
 ### Basic options
 
@@ -345,7 +372,7 @@ above applies here too.
 
 ```javascript
 	'@command': {
-		// ...
+		...
 	},
 
 	// Since options and commands are identical, aliases from one to the 
@@ -362,7 +389,7 @@ by the parser
 	'-active': {
 		doc: 'basic active option',
 		handler: function(args, key, value){
-			// ...
+			...
 		} },
 ```
 
@@ -370,7 +397,7 @@ And for quick-n-dirty hacking stuff together, a shorthand (_not for production u
 ```javascript
 	'-s': '-shorthand-active',
 	'-shorthand-active': function(args, key, value){
-		// ...
+		...
 	},
 ```
 
@@ -393,7 +420,7 @@ Pattern option/command keys enable partial input key matching.
     '-prefix-*': {
         doc: 'Pattern option',
         handler: function(rest, key){
-            // ...
+            ...
         } },
 ```
 
@@ -411,9 +438,9 @@ An options/command handler can also be a full fledged parser.
 
 ```javascript
 	'@nested': argv.Parser({
-			// ...
+			...
 		}).then(function(){
-			// ...
+			...
 		}),
 
 	// and for fun, import the bare parser...

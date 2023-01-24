@@ -394,6 +394,7 @@ object.Constructor('Parser', {
 				return Parser(Object.assign({}, 
 					update(e, {
 						splitOptions: false,
+						'-h': undefined,
 						'-help': undefined,
 						'-*': undefined,
 						'@*': undefined,
@@ -698,8 +699,9 @@ object.Constructor('Parser', {
 	usage: '$SCRIPTNAME $REQUIRED [OPTIONS]',
 	doc: undefined,
 	examples: undefined,
-	//footer: undefined,
 	footer: 'Written by: $AUTHOR\nVersion: $VERSION / License: $LICENSE',
+
+	helpExtendedCommandHeader: 'Command: $COMMAND',
 
 	// NOTE: this supports but does not requires the 'colors' module...
 	// XXX should wrap long lines...
@@ -768,20 +770,38 @@ object.Constructor('Parser', {
 			.replace(/\$SCRIPTNAME/g, this.scriptName || 'SCRIPT') },
 
 	//
-	// 	--help
-	// 	--help=<options>
+	// 	-h
+	// 	-h=<options>
 	//
 	// Supported options:
 	// 		noUsage			- do not print usage info
 	// 		noFooter		- do not print help footer
 	//
+	// By default, if this is triggered via --help this will defer to 
+	// .extendedHelp if any of the options is a nested parser.
+	// To disable this behavior set .extendedHelp to false
+	// To explicitly separate -h from --help set '-help' to 'extendedHelp'
+	//
 	// NOTE: the options are for internal use mostly...
 	// NOTE: this will set .quiet to false...
-	'-h': '-help',
-	'-help': {
+	//
+	// XXX would be nice to make this print help for '-h' and '--help' 
+	// 		separately in extended mode...
+	'-help': '-h',
+	'-h': {
 		doc: 'print this message and exit',
 		priority: 90,
 		handler: function(argv, key, value){
+			// extended help...
+			if(this.extendedHelp 
+					&& key.slice(1) == 'help'
+					&& this['-help'] == '-h'){
+				for(var n in this){
+					// only print if extended help available...
+					if(this[n] instanceof Parser){
+						return this.extendedHelp.handler.call(this, ...arguments) } } }
+
+			// normal help...
 			var options = {}
 			if(value){
 				for(var opt of value.split(/\s*,\s*/g)){
@@ -928,12 +948,14 @@ object.Constructor('Parser', {
 				.flat()
 				.join('\n')))
 			return module.STOP }},
-	// XXX might also be a good idea to do this as --help and the do the 
-	// 		short version as -h...
-	'-help-all': {
-		// XXX should this be hidden???
-		//doc: 'print help for all nested commands supporting customization',
-		doc: false,
+	// Extended help...
+	//
+	// To make this explicit add an alias to it:
+	// 	'-help': 'extendedHelp',
+	//
+	extendedHelp: {
+		doc: 'print base and configurable command help then exit',
+		priority: 90,
 		handler: function(argv, key, value){
 			var options = {}
 			if(value){
@@ -941,18 +963,22 @@ object.Constructor('Parser', {
 					options[opt] = true } }
 
 			// main help...
-			var res = this.handle('-help', argv, '-help', 'noFooter')
+			var res = this.handle('-h', argv, '-h', 'noFooter')
 
 			// print help for nested parsers...
 			for(var n in this){
-				if(this[n] instanceof Parser){
+				// doc...
+				if(this[n] instanceof Parser 
+						&& this[n].doc !== false){
 					this.print([
 						'',
 						'',
-						'Command: '+ n.slice(1),
+						(this.helpExtendedCommandHeader 
+								?? 'Command: $COMMAND')
+							.replace(/\$COMMAND/g, n.slice(1)),
 						'',
 					].join('\n'))
-					this.handle(n, ['-help=noFooter'], n.slice(1)) } }
+					this.handle(n, ['-h=noFooter'], n.slice(1)) } }
 
 			// footer...
 			options.noFooter
@@ -966,7 +992,7 @@ object.Constructor('Parser', {
 	'-?': {
 		doc: false,
 		handler: function(){
-			return this.handle('-help', ...arguments) } },
+			return this.handle('-h', ...arguments) } },
 
 
 	// Version...
