@@ -702,6 +702,8 @@ object.Constructor('Parser', {
 	footer: 'Written by: $AUTHOR\nVersion: $VERSION / License: $LICENSE',
 
 	helpExtendedCommandHeader: 'Command: $COMMAND',
+	// to disable set to false...
+	helpExtendedCommandHeaderUnderline: '-',
 
 	// NOTE: this supports but does not requires the 'colors' module...
 	// XXX should wrap long lines...
@@ -970,14 +972,18 @@ object.Constructor('Parser', {
 				// doc...
 				if(this[n] instanceof Parser 
 						&& this[n].doc !== false){
+					var title
 					this.print([
 						'',
 						'',
-						(this.helpExtendedCommandHeader 
+						(title = (this.helpExtendedCommandHeader 
 								?? 'Command: $COMMAND')
-							.replace(/\$COMMAND/g, n.slice(1)),
+							.replace(/\$COMMAND/g, n.slice(1))),
+						this.helpExtendedCommandHeaderUnderline ?
+							title.replace(/./g, this.helpExtendedCommandHeaderUnderline)
+							: [],
 						'',
-					].join('\n'))
+					].flat().join('\n'))
 					this.handle(n, ['-h=noFooter'], n.slice(1)) } }
 
 			// footer...
