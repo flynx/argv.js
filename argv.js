@@ -268,7 +268,7 @@ module.presets = {
 //
 // 		Parser(..) -> parser(..) -> result
 //
-//	Parse(..) 
+//	Parser(..) 
 //		- constructs a parser object (instance)
 //	parser(..) 
 //		- parse is instance of Parse
@@ -916,9 +916,21 @@ object.Constructor('Parser', {
 		// XXX REMOVE WHEN DONE...
 		doc: false,
 		handler: function(){
+			// XXX print header but skip footer...
+			// XXX do we pass args here???
 			var res = this.handle('-help', ...arguments) 
-			// XXX print help for nested parsers...
-			// XXX
+			// print help for nested parsers...
+			for(var n in this){
+				if(this[n] instanceof Parser){
+					// XXX print different header and skip footer...
+					this.print([
+						'',
+						'',
+						'Command: '+ n.slice(1),
+						'',
+					].join('\n'))
+					// XXX skip footer...
+					this.handle(n, ['-help'], n.slice(1)) } }
 			return res } },
 	// alias for convenience (not documented)...
 	'-?': {
