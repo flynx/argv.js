@@ -799,6 +799,9 @@ object.Constructor('Parser', {
 					&& key.replace(this.optionInputPattern, '$2') == 'help'
 					&& this['-help'] == '-h'){
 				for(var n in this){
+					// skip non-options...
+					if(/^[\w_]/.test(n)){
+						continue }
 					// only print if extended help available...
 					if(this[n] instanceof Parser){
 						return this.extendedHelp.handler.call(this, ...arguments) } } }
@@ -969,6 +972,9 @@ object.Constructor('Parser', {
 
 			// print help for nested parsers...
 			for(var n in this){
+				// skip non-options...
+				if(/^[\w_]/.test(n)){
+					continue }
 				// doc...
 				if(this[n] instanceof Parser 
 						&& this[n].doc !== false){
