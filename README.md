@@ -22,7 +22,7 @@ This code is an evolution of that parser.
   nested contexts
 - Option expansion  
   `-abc` expands to `-a -b -c` if `-abc` is not defined
-- Option/command value asignment  
+- Option/command value assignment  
   implicit `-a 123` (requires either _definition_ or manual handling) or 
   explicit `-a=123`
 - Read option/command value defaults from environment variables
@@ -466,7 +466,7 @@ To stop option processing either return `STOP` or `THEN` from the handler.
 
 There are three ways to stop and/or report errors:
 
-- Simply `throw` a `ParserError(..)` instance:
+- Simply `throw` argv's `ParserError(..)` instance:
 	```javascript
 		'-error': {
 			handler: function(){
@@ -475,7 +475,7 @@ There are three ways to stop and/or report errors:
 	Here processing will stop and the error will be reported automatically
 	before [`<parser>.error(..)`](./ADVANCED.md#parsererror-1) is triggered.
 
-- _Silently_ `return` a `ParserError(..)` instance:
+- _Silently_ `return` argv's `ParserError(..)` instance:
 	```javascript
 		'-silent-error': {
 			handler: function(){
