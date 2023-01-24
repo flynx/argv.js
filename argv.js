@@ -794,7 +794,7 @@ object.Constructor('Parser', {
 		handler: function(argv, key, value){
 			// extended help...
 			if(this.extendedHelp 
-					&& key.slice(1) == 'help'
+					&& key.replace(this.optionInputPattern, '$2') == 'help'
 					&& this['-help'] == '-h'){
 				for(var n in this){
 					// only print if extended help available...
