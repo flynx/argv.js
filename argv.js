@@ -958,6 +958,8 @@ object.Constructor('Parser', {
 	// To make this explicit add an alias to it:
 	// 	'-help': 'extendedHelp',
 	//
+	//XXX might be a good idea to add something like .details to spec
+	//		to use both here and in -h...
 	extendedHelp: {
 		doc: 'print base and configurable command help then exit',
 		priority: 90,
