@@ -52,8 +52,8 @@ var COMMAND_PREFIX = '@'
 
 //---------------------------------------------------------------------
 
-module.STOP = 
-	{doc: 'Stop option processing, triggers .stop(..) handlers'}
+module.STOP = object.STOP 
+	|| {doc: 'Stop option processing, triggers .stop(..) handlers'}
 
 module.THEN = 
 	{doc: 'Break option processing, triggers .then(..) handlers'}
