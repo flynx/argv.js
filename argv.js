@@ -567,6 +567,7 @@ object.Constructor('Parser', {
 			: !key.startsWith(COMMAND_PREFIX) ?
 				key.replace(this.commandInputPattern, COMMAND_PREFIX+'$1')
 			: key
+		// unwind aliases...
 		var seen = new Set()
 		while(key in this 
 				&& typeof(this[key]) == typeof('str')){
