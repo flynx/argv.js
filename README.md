@@ -17,9 +17,6 @@ This code is an evolution of that parser.
 
 - Simple / well documented
 - Supports both the _option_ (a-la `ls`) and _command_ (a-la `git`) paradigms
-- Nestable  
-  parsers can be nested as option/command handlers defining independent 
-  nested contexts
 - Option expansion  
   `-abc` expands to `-a -b -c` if `-abc` is not defined
 - Option/command value assignment  
@@ -37,6 +34,12 @@ This code is an evolution of that parser.
   - `-version` &ndash; print version
   - `-quiet` &ndash; suppress printing
   - `-` &ndash; stop argument processing
+- Nestable  
+  parsers can be nested as option/command handlers defining independent 
+  nested contexts
+- Option delegation  
+  options not handled by the current nested parser will be automatically 
+  delegated back to parent parser
 - Extensible and self-applicable
 
 
@@ -453,6 +456,10 @@ external command.
 
 When a nested parser is started it will consume subsequent arguments until it 
 exits, then the parent parser will pick up where it left.
+
+When a nested parser encounters an unknown option/command it will stop and 
+the option will be delegated to the parent parser. This can be disabled by
+setting `<parser>.delegateUnknownToParent` to `false`.
 
 Externally it is treated in exactly the same way as a normal _function_ handler, 
 essentially, the parent parser does not know the difference between the two.

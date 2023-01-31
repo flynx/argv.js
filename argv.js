@@ -52,8 +52,9 @@ var COMMAND_PREFIX = '@'
 
 //---------------------------------------------------------------------
 
-module.STOP = object.STOP 
-	|| {doc: 'Stop option processing, triggers .stop(..) handlers'}
+module.STOP = 
+	object.STOP 
+		|| {doc: 'Stop option processing, triggers .stop(..) handlers'}
 
 module.THEN = 
 	{doc: 'Break option processing, triggers .then(..) handlers'}
@@ -1071,12 +1072,30 @@ object.Constructor('Parser', {
 	//
 	// NOTE: to explicitly handle '-*' option or '*' command define handlers
 	// 		for them under '-\\*' and '@\\*' respectively.
+	
+	// Handle unknown otions...
+	// 	- deligate to parent if .delegateUnknownToParent is true
+	// 	- thrwo error
+	delegateUnknownToParent: true,
 	'-*': {
 		doc: false,
 		//section_doc: ...,
-		handler: function(_, key){
+		handler: function(_, key, value){
+			// delegate to parent...
+			if(this.delegateUnknownToParent 
+					&& this.parent){
+				this.parent.rest.unshift(
+					value === undefined ?
+						key
+						: key+'='+value)
+				return module.THEN }
+			// error...
 			throw module.ParserError(
-				`Unknown ${key.startsWith('-') ? 'option:' : 'command:'} $ARG`) } },
+				`Unknown ${
+					key.startsWith('-') ? 
+						'option:' 
+						: 'command:'
+				} $ARG`) } },
 	'@*': '-*',
 	
 

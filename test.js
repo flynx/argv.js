@@ -38,6 +38,9 @@ test.Setups({
 	// NOTE: this will also load .bare, .opts and .lang
 	basic: function(assert){
 		return argv.Parser({
+			examples: [
+				'$SCRIPTNAME moo foo boo'
+			],
 			// disable exit on error...
 			handleErrorExit: false,
 
