@@ -1082,8 +1082,8 @@ object.Constructor('Parser', {
 		//section_doc: ...,
 		handler: function(_, key, value){
 			// delegate to parent...
-			if(this.delegateUnknownToParent 
-					&& this.parent){
+			if(this.parent
+					&& this.delegateUnknownToParent){
 				this.parent.rest.unshift(
 					value === undefined ?
 						key

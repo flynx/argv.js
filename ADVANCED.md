@@ -28,6 +28,7 @@ For basics see [README.md](./README.md)
 			- [Disabling or redefining a built-in option](#disabling-or-redefining-a-built-in-option)
 			- [`-` / `--`](#-----)
 			- [`-*` / `@*`](#---)
+				- [`<parser>.delegateUnknownToParent`](#parserdelegateunknowntoparent)
 			- [`-v` / `--version`](#-v----version)
 			- [`-q` / `--quiet`](#-q----quiet)
 			- [`-h` / `--help`](#-h----help)
@@ -383,9 +384,20 @@ for example.
 
 Handle options/commands for which no definition is found.
 
-By default `-*` will print an "unhandled option/command" error and terminate.
+By default `-*` will:  
+- on root parser: print an "unhandled option/command" error and terminate.
+- on nested parser: delegate the option to the parent.
 
 By default `@*` is an alias to `-*`.
+
+
+##### `<parser>.delegateUnknownToParent`
+
+Controls the default behavior of a nested parser when encountering an unknown option.
+
+If `true` (default) the option will be delegated to the parent parser. If `false` 
+behave the same way as the root parser, i.e. printing an error.
+
 
 
 #### `-v` / `--version`
