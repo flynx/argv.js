@@ -451,7 +451,6 @@ object.Constructor('Parser', {
 	parent: false,
 
 
-
 	// Handler iterators...
 	//
 	// Format:
