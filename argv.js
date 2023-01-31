@@ -433,6 +433,7 @@ object.Constructor('Parser', {
 
 
 	// instance stuff...
+	//
 	// XXX do we need all three???
 	script: null,
 	scriptNmae: null,
@@ -442,6 +443,13 @@ object.Constructor('Parser', {
 	rest: null,
 	unhandled: null,
 	value: null,
+
+	// NOTE: this is dynamically set by the parent each time a nested 
+	// 		parser is triggered, so when reusing parsers in multiple 
+	// 		locations cuncurently it is recommended to create single-use
+	// 		instances for each context...
+	parent: false,
+
 
 
 	// Handler iterators...
